@@ -22,10 +22,6 @@ import timber.log.Timber;
 
 class BluetoothServer {
     private static BluetoothServer instance = null;
-    private final Context context;
-    private final Handler handler = new Handler();
-    BluetoothAdapter bluetoothAdapter;
-    BluetoothManager bluetoothManager;
 
     @NotNull
     private final PeripheralManager peripheralManager;
@@ -141,13 +137,11 @@ class BluetoothServer {
     private final HashMap<BluetoothGattService,ServiceImplementation> serviceImplementations = new HashMap<>();
 
     BluetoothServer(Context context) {
-        this.context = context;
-
         // Plant a tree
         Timber.plant(new Timber.DebugTree());
 
-        bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (!bluetoothAdapter.isMultipleAdvertisementSupported()) {
             Timber.e("not supporting advertising");

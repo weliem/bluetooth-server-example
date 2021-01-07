@@ -48,6 +48,15 @@ class GenericHealthSensorService extends BaseServiceImplementation {
         controlCharacteristic.addDescriptor(getCccDescriptor());
         controlCharacteristic.addDescriptor(getCudDescriptor(CONTROL_POINT_DESCRIPTION));
         controlCharacteristic.setValue(new byte[]{0x00});
+
+        SimpleNumericObservation test = new SimpleNumericObservation.Builder()
+                .setFloatValue(38.7f)
+                .setUnit(Unit.CELSIUS)
+                .setObservationType(ObservationType.ORAL_TEMPERATURE)
+                .setHandle(new Short("1"))
+                .build();
+
+        Timber.i("SimpleNumericObservation: <%s>", BluetoothBytesParser.bytes2String(test.getBytes()));
     }
 
     private byte[][] segments = {

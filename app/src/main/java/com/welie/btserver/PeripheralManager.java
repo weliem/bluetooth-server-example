@@ -46,6 +46,7 @@ public class PeripheralManager {
     private static final String DEVICE_IS_NULL = "Device is null";
     private static final String ADDRESS_IS_NULL = "Address is null";
     private static final String CHARACTERISTIC_VALUE_IS_NULL = "Characteristic value is null";
+    public static final String CENTRAL_IS_NULL = "Central is null";
 
     @NotNull
     private final Context context;
@@ -89,7 +90,12 @@ public class PeripheralManager {
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     Timber.i("Device %s disconnected", central.getName());
                     mainHandler.post(() -> callback.onCentralDisconnected(central));
+                    removeCentral(device);
                 }
+            } else {
+                Timber.i("Device %s disconnected with status %d", central.getName(), status);
+                mainHandler.post(() -> callback.onCentralDisconnected(central));
+                removeCentral(device);
             }
         }
 
@@ -112,7 +118,6 @@ public class PeripheralManager {
 
         @Override
         public void onCharacteristicWriteRequest(@NotNull final BluetoothDevice device, int requestId, @NotNull final BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, @Nullable byte[] value) {
-            super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
             Timber.i("write %s request <%s> for <%s>", responseNeeded ? "WITH_RESPONSE" : "WITHOUT_RESPONSE", bytes2String(value), characteristic.getUuid());
 
             final byte[] safeValue = nonnullOf(value);
@@ -146,20 +151,9 @@ public class PeripheralManager {
             final BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor does not have characteristic");
 
             mainHandler.post((() -> {
-                int status = BluetoothGatt.GATT_SUCCESS;
+                int status;
                 if (descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
-                    // Check value to see if it is valid and if matches the characteristic properties
-                    if (safeValue.length != 2) {
-                        status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
-                    } else if (!(Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
-                            || Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-                            || Arrays.equals(safeValue, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE))) {
-                        status = BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED;
-                    } else if (!supportsIndicate(characteristic) && Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) {
-                        status = BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED;
-                    } else if (!supportsNotify(characteristic) && Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-                        status = BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED;
-                    }
+                    status = checkCccDescriptorValue(safeValue, characteristic);
                 } else {
                     // Ask callback if value is ok or not
                     Timber.i("write request for descriptor <%s>", descriptor.getUuid());
@@ -185,6 +179,24 @@ public class PeripheralManager {
                     }
                 }
             }));
+        }
+
+        // Check value to see if it is valid and if matches the characteristic properties
+        private int checkCccDescriptorValue(@NotNull byte[] safeValue, @NotNull BluetoothGattCharacteristic characteristic) {
+            int status = BluetoothGatt.GATT_SUCCESS;
+
+            if (safeValue.length != 2) {
+                status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
+            } else if (!(Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
+                    || Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                    || Arrays.equals(safeValue, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE))) {
+                status = BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED;
+            } else if (!supportsIndicate(characteristic) && Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) {
+                status = BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED;
+            } else if (!supportsNotify(characteristic) && Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
+                status = BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED;
+            }
+            return status;
         }
 
         @Override
@@ -319,12 +331,12 @@ public class PeripheralManager {
         return result;
     }
 
-    public boolean cancelConnection(@NotNull String peripheralAddress) {
-        Objects.requireNonNull(peripheralAddress, ADDRESS_IS_NULL);
+    public boolean cancelConnection(@NotNull Central central) {
+        Objects.requireNonNull(central, CENTRAL_IS_NULL);
         List<BluetoothDevice> bluetoothDevices = getConnectedDevices();
 
         for (BluetoothDevice device : bluetoothDevices) {
-            if (device.getAddress().equals(peripheralAddress)) {
+            if (device.getAddress().equals(central.getAddress())) {
                 cancelConnection(device);
                 return true;
             }
@@ -377,9 +389,10 @@ public class PeripheralManager {
         }
     }
 
-    private Central getCentral(BluetoothDevice device) {
-        final String address = device.getAddress();
+    private Central getCentral(@NotNull BluetoothDevice device) {
+        Objects.requireNonNull(device, DEVICE_IS_NULL);
 
+        final String address = device.getAddress();
         if (connectedCentrals.contains(address)) {
             return connectedCentrals.get(address);
         }
@@ -389,9 +402,10 @@ public class PeripheralManager {
         return central;
     }
 
-    private void removeCentral(BluetoothDevice device) {
-        String address = device.getAddress();
+    private void removeCentral(@NotNull BluetoothDevice device) {
+        Objects.requireNonNull(device, DEVICE_IS_NULL);
 
+        final String address = device.getAddress();
         if (connectedCentrals.contains(address)) {
             connectedCentrals.remove(address);
         }
