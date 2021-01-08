@@ -6,7 +6,7 @@ import android.bluetooth.BluetoothGattService;
 
 import org.jetbrains.annotations.NotNull;
 
-interface ServiceImplementation {
+interface Service {
 
     BluetoothGattService getService();
 

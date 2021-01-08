@@ -13,12 +13,12 @@ import java.util.Objects;
 import static com.welie.btserver.PeripheralManager.CCC_DESCRIPTOR_UUID;
 import static com.welie.btserver.PeripheralManager.CUD_DESCRIPTOR_UUID;
 
-class BaseServiceImplementation implements ServiceImplementation {
+class BaseService implements Service {
 
     @NotNull
     protected final PeripheralManager peripheralManager;
 
-    BaseServiceImplementation(@NotNull PeripheralManager peripheralManager) {
+    BaseService(@NotNull PeripheralManager peripheralManager) {
         this.peripheralManager = Objects.requireNonNull(peripheralManager);
     }
 
@@ -33,6 +33,10 @@ class BaseServiceImplementation implements ServiceImplementation {
         BluetoothGattDescriptor cudDescriptor = new BluetoothGattDescriptor(CUD_DESCRIPTOR_UUID, BluetoothGattDescriptor.PERMISSION_READ | BluetoothGattDescriptor.PERMISSION_WRITE);
         cudDescriptor.setValue(defaultValue.getBytes(StandardCharsets.UTF_8));
         return cudDescriptor;
+    }
+
+    protected void notifyCharacteristicChanged(@NotNull final BluetoothGattCharacteristic characteristic) {
+        peripheralManager.notifyCharacteristicChanged(characteristic);
     }
 
     boolean noCentralsConnected() {

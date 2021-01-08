@@ -15,7 +15,7 @@ import java.util.UUID;
 
 import timber.log.Timber;
 
-class GenericHealthSensorService extends BaseServiceImplementation {
+class GenericHealthSensorService extends BaseService {
 
     private static final UUID GHS_SERVICE_UUID = UUID.fromString("0000183D-0000-1000-8000-00805f9b34fb");
     private static final UUID OBSERVATION_CHARACTERISTIC_UUID = UUID.fromString("00002AC4-0000-1000-8000-00805f9b34fb");
@@ -96,6 +96,12 @@ class GenericHealthSensorService extends BaseServiceImplementation {
         stopNotifying();
     }
 
+    @Override
+    public int onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
+        // Check the value if it meets the requirements, if so return GATT_SUCCESS otherwise an error code
+        return super.onCharacteristicWrite(central, characteristic, value);
+    }
+
     private void stopNotifying() {
         handler.removeCallbacks(notifyRunnable);
         observationCharacteristic.getDescriptor(PeripheralManager.CCC_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
@@ -107,11 +113,12 @@ class GenericHealthSensorService extends BaseServiceImplementation {
             Timber.i("Sending <%s>", BluetoothBytesParser.bytes2String(segments[i]));
 
             observationCharacteristic.setValue(segments[i]);
-            peripheralManager.notifyCharacteristicChanged(observationCharacteristic);
+            notifyCharacteristicChanged(observationCharacteristic);
         }
 
         handler.postDelayed(notifyRunnable, 5000);
     }
+
 
     private void updateSegments() {
         byte hr = 0x40;

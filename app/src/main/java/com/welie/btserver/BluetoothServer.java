@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.content.Context;
-import android.os.Handler;
 import android.os.ParcelUuid;
 
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +40,7 @@ class BluetoothServer {
 
         @Override
         public void onCharacteristicRead(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
-            ServiceImplementation serviceImplementation = serviceImplementations.get(characteristic.getService());
+            Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
                 serviceImplementation.onCharacteristicRead(central, characteristic);
             }
@@ -49,7 +48,7 @@ class BluetoothServer {
 
         @Override
         public int onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
-            ServiceImplementation serviceImplementation = serviceImplementations.get(characteristic.getService());
+            Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
                 return serviceImplementation.onCharacteristicWrite(central, characteristic, value);
             }
@@ -60,7 +59,7 @@ class BluetoothServer {
         public void onDescriptorRead(@NotNull Central central, @NotNull BluetoothGattDescriptor descriptor) {
             BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor has no Characteristic");
             BluetoothGattService service = Objects.requireNonNull(characteristic.getService(), "Characteristic has no Service");
-            ServiceImplementation serviceImplementation = serviceImplementations.get(service);
+            Service serviceImplementation = serviceImplementations.get(service);
             if (serviceImplementation != null) {
                 serviceImplementation.onDescriptorRead(central, descriptor);
             }
@@ -70,7 +69,7 @@ class BluetoothServer {
         public int onDescriptorWrite(@NotNull Central central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value) {
             BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor has no Characteristic");
             BluetoothGattService service = Objects.requireNonNull(characteristic.getService(), "Characteristic has no Service");
-            ServiceImplementation serviceImplementation = serviceImplementations.get(service);
+            Service serviceImplementation = serviceImplementations.get(service);
             if (serviceImplementation != null) {
                 return serviceImplementation.onDescriptorWrite(central, descriptor, value);
             }
@@ -79,7 +78,7 @@ class BluetoothServer {
 
         @Override
         public void onNotifyingEnabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
-            ServiceImplementation serviceImplementation = serviceImplementations.get(characteristic.getService());
+            Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
                 serviceImplementation.onNotifyingEnabled(central, characteristic);
             }
@@ -87,7 +86,7 @@ class BluetoothServer {
 
         @Override
         public void onNotifyingDisabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
-            ServiceImplementation serviceImplementation = serviceImplementations.get(characteristic.getService());
+            Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
                 serviceImplementation.onNotifyingDisabled(central, characteristic);
             }
@@ -95,14 +94,14 @@ class BluetoothServer {
 
         @Override
         public void onCentralConnected(@NotNull Central central) {
-            for (ServiceImplementation serviceImplementation : serviceImplementations.values()) {
+            for (Service serviceImplementation : serviceImplementations.values()) {
                 serviceImplementation.onCentralConnected(central);
             }
         }
 
         @Override
         public void onCentralDisconnected(@NotNull Central central) {
-            for (ServiceImplementation serviceImplementation : serviceImplementations.values()) {
+            for (Service serviceImplementation : serviceImplementations.values()) {
                 serviceImplementation.onCentralDisconnected(central);
             }
         }
@@ -134,7 +133,7 @@ class BluetoothServer {
         }
     }
 
-    private final HashMap<BluetoothGattService,ServiceImplementation> serviceImplementations = new HashMap<>();
+    private final HashMap<BluetoothGattService, Service> serviceImplementations = new HashMap<>();
 
     BluetoothServer(Context context) {
         // Plant a tree

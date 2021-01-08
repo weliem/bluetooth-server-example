@@ -12,7 +12,7 @@ import java.util.UUID;
 
 import timber.log.Timber;
 
-class HeartRateService extends BaseServiceImplementation {
+class HeartRateService extends BaseService {
 
     private static final UUID HRS_SERVICE_UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb");
     private static final UUID HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb");

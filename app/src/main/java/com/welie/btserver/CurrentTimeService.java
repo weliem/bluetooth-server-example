@@ -11,7 +11,7 @@ import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.UUID;
 
-class CurrentTimeService extends BaseServiceImplementation {
+class CurrentTimeService extends BaseService {
 
     private static final UUID CTS_SERVICE_UUID = UUID.fromString("00001805-0000-1000-8000-00805f9b34fb");
     private static final UUID CURRENT_TIME_CHARACTERISTIC_UUID = UUID.fromString("00002A2B-0000-1000-8000-00805f9b34fb");
