@@ -44,6 +44,14 @@ class HeartRateService extends BaseService {
     }
 
     @Override
+    public void onCentralConnected(@NotNull final Central central) {
+        super.onCentralConnected(central);
+        handler.postDelayed(() -> {
+            peripheralManager.cancelConnection(central);
+        }, 15000);
+    }
+
+    @Override
     public void onCentralDisconnected(@NotNull Central central) {
         if (noCentralsConnected()) {
             stopNotifying();

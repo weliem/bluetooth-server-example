@@ -97,7 +97,7 @@ class GenericHealthSensorService extends BaseService {
     }
 
     @Override
-    public int onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
+    public GattStatus onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
         // Check the value if it meets the requirements, if so return GATT_SUCCESS otherwise an error code
         return super.onCharacteristicWrite(central, characteristic, value);
     }

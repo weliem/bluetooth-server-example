@@ -29,8 +29,8 @@ class BaseService implements Service {
     }
 
     BluetoothGattDescriptor getCudDescriptor(@NotNull String defaultValue) {
-        Objects.requireNonNull(defaultValue, "String is null");
-        BluetoothGattDescriptor cudDescriptor = new BluetoothGattDescriptor(CUD_DESCRIPTOR_UUID, BluetoothGattDescriptor.PERMISSION_READ | BluetoothGattDescriptor.PERMISSION_WRITE);
+        Objects.requireNonNull(defaultValue, "CUD value is null");
+        BluetoothGattDescriptor cudDescriptor = new BluetoothGattDescriptor(CUD_DESCRIPTOR_UUID, BluetoothGattDescriptor.PERMISSION_READ);
         cudDescriptor.setValue(defaultValue.getBytes(StandardCharsets.UTF_8));
         return cudDescriptor;
     }
@@ -40,7 +40,7 @@ class BaseService implements Service {
     }
 
     boolean noCentralsConnected() {
-        return peripheralManager.getConnectedDevices().size() == 0;
+        return peripheralManager.getConnectedCentrals().size() == 0;
     }
 
     @Override
@@ -54,8 +54,8 @@ class BaseService implements Service {
     }
 
     @Override
-    public int onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
-        return BluetoothGatt.GATT_SUCCESS;
+    public GattStatus onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
+        return GattStatus.SUCCESS;
     }
 
     @Override
@@ -64,8 +64,8 @@ class BaseService implements Service {
     }
 
     @Override
-    public int onDescriptorWrite(@NotNull Central central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value) {
-        return BluetoothGatt.GATT_SUCCESS;
+    public GattStatus onDescriptorWrite(@NotNull Central central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value) {
+        return GattStatus.SUCCESS;
     }
 
     @Override
