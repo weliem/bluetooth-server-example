@@ -52,18 +52,22 @@ class HeartRateService extends BaseService {
 
     @Override
     public void onNotifyingEnabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
-        notifyHeartRate();
+        if (characteristic.getUuid().equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
+            notifyHeartRate();
+        }
     }
 
     @Override
     public void onNotifyingDisabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
-        stopNotifying();
+        if (characteristic.getUuid().equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
+            stopNotifying();
+        }
     }
 
     private void notifyHeartRate() {
         currentHR += (int) ((Math.random() * 10) - 5);
         measurement.setValue(new byte[]{0x00, (byte) currentHR});
-        peripheralManager.notifyCharacteristicChanged(measurement);
+        notifyCharacteristicChanged(measurement);
         Timber.i("new hr: %d", currentHR);
 
         handler.postDelayed(notifyRunnable, 1000);
