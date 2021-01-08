@@ -7,7 +7,7 @@ class ObservationSerializer {
     companion object {
 
         @JvmStatic
-        fun serialize(simpleNumericObservation: SimpleNumericObservation2) : ByteArray {
+        fun serialize(simpleNumericObservation: SimpleNumericObservation) : ByteArray {
             val handleCode = 0x00010921
             val handleLength = 2
 

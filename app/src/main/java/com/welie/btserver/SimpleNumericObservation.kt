@@ -2,7 +2,7 @@ package com.welie.btserver
 
 import java.util.*
 
-data class SimpleNumericObservation2(
+data class SimpleNumericObservation(
         val id : Short,
         val type : ObservationType,
         val value : Float,

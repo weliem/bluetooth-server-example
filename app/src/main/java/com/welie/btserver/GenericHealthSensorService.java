@@ -50,17 +50,7 @@ class GenericHealthSensorService extends BaseService {
         controlCharacteristic.addDescriptor(getCudDescriptor(CONTROL_POINT_DESCRIPTION));
         controlCharacteristic.setValue(new byte[]{0x00});
 
-        SimpleNumericObservation test = new SimpleNumericObservation.Builder()
-                .setFloatValue(38.7f)
-                .setUnit(Unit.CELSIUS)
-                .setObservationType(ObservationType.ORAL_TEMPERATURE)
-                .setHandle((short) 1)
-                .setTimestamp(Calendar.getInstance().getTime())
-                .build();
-
-        Timber.i("SimpleNumericObservation: <%s>", BluetoothBytesParser.bytes2String(test.getBytes()));
-
-        SimpleNumericObservation2 test2 = new SimpleNumericObservation2((short) 1, ObservationType.ORAL_TEMPERATURE, 38.7f, Unit.CELSIUS, Calendar.getInstance().getTime());
+        SimpleNumericObservation test2 = new SimpleNumericObservation((short) 1, ObservationType.ORAL_TEMPERATURE, 38.7f, Unit.CELSIUS, Calendar.getInstance().getTime());
         byte[] test2bytes = ObservationSerializer.serialize(test2);
         Timber.i("SimpleNumericObservation: <%s>", BluetoothBytesParser.bytes2String(test2bytes));
 
