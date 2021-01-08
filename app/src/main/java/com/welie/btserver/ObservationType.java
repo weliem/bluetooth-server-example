@@ -2,7 +2,7 @@ package com.welie.btserver;
 
 import org.jetbrains.annotations.NotNull;
 
-enum ObservationType {
+public enum ObservationType {
     SPO2(0x00024BB8),
     ORAL_TEMPERATURE(0x0002E008),
     PULSE_RATE(0x0002481A),

@@ -9,6 +9,7 @@ import android.os.Looper;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
@@ -53,10 +54,16 @@ class GenericHealthSensorService extends BaseServiceImplementation {
                 .setFloatValue(38.7f)
                 .setUnit(Unit.CELSIUS)
                 .setObservationType(ObservationType.ORAL_TEMPERATURE)
-                .setHandle(new Short("1"))
+                .setHandle((short) 1)
+                .setTimestamp(Calendar.getInstance().getTime())
                 .build();
 
         Timber.i("SimpleNumericObservation: <%s>", BluetoothBytesParser.bytes2String(test.getBytes()));
+
+        SimpleNumericObservation2 test2 = new SimpleNumericObservation2((short) 1, ObservationType.ORAL_TEMPERATURE, 38.7f, Unit.CELSIUS, Calendar.getInstance().getTime());
+        byte[] test2bytes = ObservationSerializer.serialize(test2);
+        Timber.i("SimpleNumericObservation: <%s>", BluetoothBytesParser.bytes2String(test2bytes));
+
     }
 
     private byte[][] segments = {

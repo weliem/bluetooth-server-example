@@ -2,7 +2,7 @@ package com.welie.btserver;
 
 import org.jetbrains.annotations.NotNull;
 
-enum Unit {
+public enum Unit {
 
     BPM(0x00040AA0),
     MMHG(0x00040F20),

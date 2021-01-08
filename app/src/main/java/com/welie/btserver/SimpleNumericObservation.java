@@ -13,7 +13,6 @@ import static com.welie.btserver.BluetoothBytesParser.mergeArrays;
 
 public class SimpleNumericObservation {
 
-
     private final byte[] handle;
     private final byte[] type;
     private final byte[] value;
@@ -44,8 +43,7 @@ public class SimpleNumericObservation {
 
         int valueCode = 0x00010A56;
         int valueLength = 4;
-        Integer intValue;
-        Float floatValue;
+        Float value;
 
         int unitCode = 0x00010996;
         int unitLength = 4;
@@ -60,13 +58,8 @@ public class SimpleNumericObservation {
             return this;
         }
 
-        public SimpleNumericObservation.Builder setIntegerValue(Integer value) {
-            this.intValue = value;
-            return this;
-        }
-
         public SimpleNumericObservation.Builder setFloatValue(Float value) {
-            this.floatValue = value;
+            this.value = value;
             return this;
         }
 
@@ -85,10 +78,17 @@ public class SimpleNumericObservation {
             return this;
         }
 
+        public SimpleNumericObservation create(Short id, ObservationType type, Float value, Unit unit, Date timestamp) {
+            return this
+                    .setHandle(id)
+                    .setObservationType(type)
+                    .setFloatValue(value)
+                    .setUnit(unit)
+                    .setTimestamp(timestamp)
+                    .build();
 
-        /**
-         * Build the {@link SimpleNumericObservation} object.
-         */
+        }
+
         public SimpleNumericObservation build() {
             BluetoothBytesParser handleParser = new BluetoothBytesParser(ByteOrder.BIG_ENDIAN);
             handleParser.setIntValue(handleCode, FORMAT_UINT32);
@@ -103,21 +103,17 @@ public class SimpleNumericObservation {
             BluetoothBytesParser valueParser = new BluetoothBytesParser(ByteOrder.BIG_ENDIAN);
             valueParser.setIntValue(valueCode, FORMAT_UINT32);
             valueParser.setIntValue(valueLength, FORMAT_UINT16);
-            if (intValue != null) {
-                valueParser.setIntValue(intValue, FORMAT_UINT32);
-            } else if (floatValue != null) {
-                valueParser.setFloatValue(floatValue, 1);
-            }
+            valueParser.setFloatValue(value, 1);
 
             BluetoothBytesParser unitParser = new BluetoothBytesParser(ByteOrder.BIG_ENDIAN);
             unitParser.setIntValue(unitCode, FORMAT_UINT32);
-            unitParser.setIntValue(unitLength,FORMAT_UINT16 );
+            unitParser.setIntValue(unitLength, FORMAT_UINT16);
             unitParser.setIntValue(unit.getValue(), FORMAT_UINT32);
 
             BluetoothBytesParser timestampParser = new BluetoothBytesParser(ByteOrder.BIG_ENDIAN);
             timestampParser.setIntValue(timestampCode, FORMAT_UINT32);
             timestampParser.setIntValue(timestampLength, FORMAT_UINT16);
-            timestampParser.setLong(Calendar.getInstance().getTimeInMillis());
+            timestampParser.setLong(timestamp.getTime());
 
             return new SimpleNumericObservation(
                     handleParser.getValue(),
