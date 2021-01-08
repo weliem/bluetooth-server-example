@@ -50,7 +50,7 @@ public class PeripheralManager {
     private static final String CHARACTERISTIC_IS_NULL = "Characteristic is null";
     private static final String DEVICE_IS_NULL = "Device is null";
     private static final String CHARACTERISTIC_VALUE_IS_NULL = "Characteristic value is null";
-    public static final String CENTRAL_IS_NULL = "Central is null";
+    private static final String CENTRAL_IS_NULL = "Central is null";
 
     @NotNull
     private final Context context;
@@ -339,6 +339,7 @@ public class PeripheralManager {
         bluetoothGattServer.clearServices();
     }
 
+    @NotNull
     public List<BluetoothGattService> getServices() {
         return bluetoothGattServer.getServices();
     }
