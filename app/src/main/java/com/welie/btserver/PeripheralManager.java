@@ -136,16 +136,32 @@ public class PeripheralManager {
         }
 
         @Override
-        public void onCharacteristicReadRequest(@NotNull final BluetoothDevice device, int requestId, int offset, @NotNull final BluetoothGattCharacteristic characteristic) {
-            Timber.i("read request for characteristic <%s>", characteristic.getUuid());
+        public void onCharacteristicReadRequest(@NotNull final BluetoothDevice device, final int requestId, final int offset, @NotNull final BluetoothGattCharacteristic characteristic) {
+            Timber.i("read request for characteristic <%s> with offset %d", characteristic.getUuid(), offset);
 
             mainHandler.post(() -> {
                 final Central central = getCentral(device);
                 if (central != null) {
-                    callback.onCharacteristicRead(central, characteristic);
-                    bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, nonnullOf(characteristic.getValue()));
+                    if (offset == 0) {
+                        callback.onCharacteristicRead(central, characteristic);
+                    }
+
+                    // If data is longer than MTU - 1, cut the array. Only ATT_MTU - 1 bytes can be sent in Long Read.
+                    final byte[] value = copyOf(nonnullOf(characteristic.getValue()), offset, central.getCurrentMtu() - 1);
+
+                    bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
                 }
             });
+        }
+
+        private @NotNull byte[] copyOf(@NotNull byte[] source, int offset, int maxSize) {
+            if (source.length > maxSize) {
+                final int chunkSize = Math.min(source.length - offset, maxSize);
+                final byte[] result = new byte[chunkSize];
+                System.arraycopy(source, offset, result, 0, chunkSize);
+                return result;
+            }
+            return Arrays.copyOf(source, source.length);
         }
 
         @Override
