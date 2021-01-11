@@ -166,7 +166,7 @@ public class PeripheralManager {
         }
 
         @NotNull
-        private HashMap<BluetoothGattCharacteristic, byte[]> writeLongTemporaryBytes = new HashMap<>();
+        private final HashMap<BluetoothGattCharacteristic, byte[]> writeLongTemporaryBytes = new HashMap<>();
 
         @Override
         public void onCharacteristicWriteRequest(@NotNull final BluetoothDevice device, final int requestId, @NotNull final BluetoothGattCharacteristic characteristic, final boolean preparedWrite, final boolean responseNeeded, final int offset, @Nullable final byte[] value) {
