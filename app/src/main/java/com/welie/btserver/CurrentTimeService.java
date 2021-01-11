@@ -11,6 +11,8 @@ import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.UUID;
 
+import timber.log.Timber;
+
 class CurrentTimeService extends BaseService {
 
     private static final UUID CTS_SERVICE_UUID = UUID.fromString("00001805-0000-1000-8000-00805f9b34fb");
@@ -33,6 +35,12 @@ class CurrentTimeService extends BaseService {
         service.addCharacteristic(currentTime);
         currentTime.addDescriptor(getCccDescriptor());
         setCurrentTime();
+    }
+
+    @Override
+    public GattStatus onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
+        Timber.i("onCharacteristicWrite <%s>", BluetoothBytesParser.bytes2String(value));
+        return super.onCharacteristicWrite(central, characteristic, value);
     }
 
     @Override
