@@ -166,7 +166,7 @@ public class PeripheralManager {
         }
 
         @NotNull
-        private final HashMap<BluetoothGattCharacteristic, byte[]> writeLongTemporaryBytes = new HashMap<>();
+        private final HashMap<BluetoothGattCharacteristic, byte[]> writeLongCharacteristicTemporaryBytes = new HashMap<>();
 
         @Override
         public void onCharacteristicWriteRequest(@NotNull final BluetoothDevice device, final int requestId, @NotNull final BluetoothGattCharacteristic characteristic, final boolean preparedWrite, final boolean responseNeeded, final int offset, @Nullable final byte[] value) {
@@ -186,11 +186,11 @@ public class PeripheralManager {
                         }
                     } else {
                         if (offset == 0) {
-                            writeLongTemporaryBytes.put(characteristic, safeValue);
+                            writeLongCharacteristicTemporaryBytes.put(characteristic, safeValue);
                         } else {
-                            byte[] temporaryBytes = writeLongTemporaryBytes.get(characteristic);
+                            byte[] temporaryBytes = writeLongCharacteristicTemporaryBytes.get(characteristic);
                             if (temporaryBytes != null && offset == temporaryBytes.length) {
-                                writeLongTemporaryBytes.put(characteristic, mergeArrays(temporaryBytes, value));
+                                writeLongCharacteristicTemporaryBytes.put(characteristic, mergeArrays(temporaryBytes, value));
                             } else {
                                 status = GattStatus.INVALID_OFFSET;
                             }
@@ -223,29 +223,46 @@ public class PeripheralManager {
             });
         }
 
+        @NotNull
+        private final HashMap<BluetoothGattDescriptor, byte[]> writeLongDescriptorTemporaryBytes = new HashMap<>();
+
         @Override
-        public void onDescriptorWriteRequest(@NotNull final BluetoothDevice device, int requestId, @NotNull final BluetoothGattDescriptor descriptor, boolean preparedWrite, boolean responseNeeded, int offset, @Nullable byte[] value) {
+        public void onDescriptorWriteRequest(@NotNull final BluetoothDevice device, final int requestId, @NotNull final BluetoothGattDescriptor descriptor, final boolean preparedWrite, final boolean responseNeeded, final int offset, @Nullable final byte[] value) {
             final byte[] safeValue = nonnullOf(value);
             final BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor does not have characteristic");
 
             mainHandler.post(() -> {
                 final Central central = getCentral(device);
                 if (central != null) {
-                    GattStatus status;
+                    GattStatus status = GattStatus.SUCCESS;
                     if (descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
                         status = checkCccDescriptorValue(safeValue, characteristic);
                     } else {
                         // Ask callback if value is ok or not
                         Timber.i("write request for descriptor <%s>", descriptor.getUuid());
-                        status = callback.onDescriptorWrite(central, descriptor, safeValue);
+
+                        if (!preparedWrite) {
+                            status = callback.onDescriptorWrite(central, descriptor, safeValue);
+                        } else {
+                            if (offset == 0) {
+                                writeLongDescriptorTemporaryBytes.put(descriptor, safeValue);
+                            } else {
+                                byte[] temporaryBytes = writeLongDescriptorTemporaryBytes.get(descriptor);
+                                if (temporaryBytes != null && offset == temporaryBytes.length) {
+                                    writeLongDescriptorTemporaryBytes.put(descriptor, mergeArrays(temporaryBytes, value));
+                                } else {
+                                    status = GattStatus.INVALID_OFFSET;
+                                }
+                            }
+                        }
                     }
 
-                    if (status == GattStatus.SUCCESS) {
+                    if (status == GattStatus.SUCCESS && !preparedWrite) {
                         descriptor.setValue(safeValue);
                     }
 
                     if (responseNeeded) {
-                        bluetoothGattServer.sendResponse(device, requestId, status.getValue(), 0, null);
+                        bluetoothGattServer.sendResponse(device, requestId, status.getValue(), offset, null);
                     }
 
                     if (status == GattStatus.SUCCESS && descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
@@ -287,21 +304,33 @@ public class PeripheralManager {
                     GattStatus status = GattStatus.SUCCESS;
                     final Central central = getCentral(device);
                     if (central != null) {
-                        BluetoothGattCharacteristic characteristic = writeLongTemporaryBytes.keySet().iterator().next();
-                        if(characteristic != null) {
-                            status = callback.onCharacteristicWrite(central, characteristic, writeLongTemporaryBytes.get(characteristic));
+                        if (!writeLongCharacteristicTemporaryBytes.isEmpty()) {
+                            BluetoothGattCharacteristic characteristic = writeLongCharacteristicTemporaryBytes.keySet().iterator().next();
+                            if (characteristic != null) {
+                                status = callback.onCharacteristicWrite(central, characteristic, writeLongCharacteristicTemporaryBytes.get(characteristic));
 
-                            if (status == GattStatus.SUCCESS) {
-                                characteristic.setValue(writeLongTemporaryBytes.get(characteristic));
+                                if (status == GattStatus.SUCCESS) {
+                                    characteristic.setValue(writeLongCharacteristicTemporaryBytes.get(characteristic));
+                                    writeLongCharacteristicTemporaryBytes.clear();
+                                }
+                            }
+                        } else if(!writeLongDescriptorTemporaryBytes.isEmpty()) {
+                            BluetoothGattDescriptor descriptor = writeLongDescriptorTemporaryBytes.keySet().iterator().next();
+                            if (descriptor != null) {
+                                status = callback.onDescriptorWrite(central, descriptor, writeLongDescriptorTemporaryBytes.get(descriptor));
+
+                                if (status == GattStatus.SUCCESS) {
+                                    descriptor.setValue(writeLongDescriptorTemporaryBytes.get(descriptor));
+                                    writeLongDescriptorTemporaryBytes.clear();
+                                }
                             }
                         }
                     }
-                    writeLongTemporaryBytes.clear();
                     bluetoothGattServer.sendResponse(device, requestId, status.getValue(), 0, null);
                 });
             } else {
                 // Long write was cancelled
-                writeLongTemporaryBytes.clear();
+                writeLongCharacteristicTemporaryBytes.clear();
                 bluetoothGattServer.sendResponse(device, requestId, GattStatus.SUCCESS.getValue(), 0, null);
             }
         }
