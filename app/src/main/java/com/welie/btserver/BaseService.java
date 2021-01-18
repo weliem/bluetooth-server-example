@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_READ;
+import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_WRITE;
 import static com.welie.btserver.PeripheralManager.CCC_DESCRIPTOR_UUID;
 import static com.welie.btserver.PeripheralManager.CUD_DESCRIPTOR_UUID;
 
@@ -23,14 +25,14 @@ class BaseService implements Service {
     }
 
     BluetoothGattDescriptor getCccDescriptor() {
-        BluetoothGattDescriptor cccDescriptor = new BluetoothGattDescriptor(CCC_DESCRIPTOR_UUID, BluetoothGattDescriptor.PERMISSION_READ | BluetoothGattDescriptor.PERMISSION_WRITE);
+        BluetoothGattDescriptor cccDescriptor = new BluetoothGattDescriptor(CCC_DESCRIPTOR_UUID, PERMISSION_READ | PERMISSION_WRITE);
         cccDescriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
         return cccDescriptor;
     }
 
     BluetoothGattDescriptor getCudDescriptor(@NotNull String defaultValue) {
         Objects.requireNonNull(defaultValue, "CUD value is null");
-        BluetoothGattDescriptor cudDescriptor = new BluetoothGattDescriptor(CUD_DESCRIPTOR_UUID, BluetoothGattDescriptor.PERMISSION_READ);
+        BluetoothGattDescriptor cudDescriptor = new BluetoothGattDescriptor(CUD_DESCRIPTOR_UUID, PERMISSION_READ | PERMISSION_WRITE);
         cudDescriptor.setValue(defaultValue.getBytes(StandardCharsets.UTF_8));
         return cudDescriptor;
     }

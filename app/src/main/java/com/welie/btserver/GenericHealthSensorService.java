@@ -92,6 +92,12 @@ class GenericHealthSensorService extends BaseService {
         return super.onCharacteristicWrite(central, characteristic, value);
     }
 
+    @Override
+    public GattStatus onDescriptorWrite(@NotNull Central central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value) {
+        Timber.i("onDescriptorWrite %s", BluetoothBytesParser.bytes2String(value));
+        return super.onDescriptorWrite(central, descriptor, value);
+    }
+
     private void stopNotifying() {
         handler.removeCallbacks(notifyRunnable);
         observationCharacteristic.getDescriptor(PeripheralManager.CCC_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);

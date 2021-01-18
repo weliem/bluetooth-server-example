@@ -170,7 +170,7 @@ public class PeripheralManager {
 
         @Override
         public void onCharacteristicWriteRequest(@NotNull final BluetoothDevice device, final int requestId, @NotNull final BluetoothGattCharacteristic characteristic, final boolean preparedWrite, final boolean responseNeeded, final int offset, @Nullable final byte[] value) {
-            Timber.i("write %s request <%s> offset %d for <%s>", responseNeeded ? "WITH_RESPONSE" : "WITHOUT_RESPONSE", bytes2String(value), offset, characteristic.getUuid());
+            Timber.i("write characteristic %s request <%s> offset %d for <%s>", responseNeeded ? "WITH_RESPONSE" : "WITHOUT_RESPONSE", bytes2String(value), offset, characteristic.getUuid());
 
             final byte[] safeValue = nonnullOf(value);
             mainHandler.post(() -> {
@@ -190,7 +190,7 @@ public class PeripheralManager {
                         } else {
                             byte[] temporaryBytes = writeLongCharacteristicTemporaryBytes.get(characteristic);
                             if (temporaryBytes != null && offset == temporaryBytes.length) {
-                                writeLongCharacteristicTemporaryBytes.put(characteristic, mergeArrays(temporaryBytes, value));
+                                writeLongCharacteristicTemporaryBytes.put(characteristic, mergeArrays(temporaryBytes, safeValue));
                             } else {
                                 status = GattStatus.INVALID_OFFSET;
                             }
@@ -206,7 +206,7 @@ public class PeripheralManager {
 
         @Override
         public void onDescriptorReadRequest(@NotNull final BluetoothDevice device, int requestId, int offset, final BluetoothGattDescriptor descriptor) {
-            Timber.i("read request for descriptor <%s>", descriptor.getUuid());
+            Timber.i("read request for descriptor <%s> with offset %d", descriptor.getUuid(), offset);
 
             mainHandler.post(() -> {
                 final Central central = getCentral(device);
@@ -231,6 +231,8 @@ public class PeripheralManager {
             final byte[] safeValue = nonnullOf(value);
             final BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor does not have characteristic");
 
+            Timber.i("write descriptor %s request <%s> offset %d for <%s>", responseNeeded ? "WITH_RESPONSE" : "WITHOUT_RESPONSE", bytes2String(value), offset, descriptor.getUuid());
+
             mainHandler.post(() -> {
                 final Central central = getCentral(device);
                 if (central != null) {
@@ -238,10 +240,8 @@ public class PeripheralManager {
                     if (descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
                         status = checkCccDescriptorValue(safeValue, characteristic);
                     } else {
-                        // Ask callback if value is ok or not
-                        Timber.i("write request for descriptor <%s>", descriptor.getUuid());
-
                         if (!preparedWrite) {
+                            // Ask callback if value is ok or not
                             status = callback.onDescriptorWrite(central, descriptor, safeValue);
                         } else {
                             if (offset == 0) {
@@ -249,7 +249,7 @@ public class PeripheralManager {
                             } else {
                                 byte[] temporaryBytes = writeLongDescriptorTemporaryBytes.get(descriptor);
                                 if (temporaryBytes != null && offset == temporaryBytes.length) {
-                                    writeLongDescriptorTemporaryBytes.put(descriptor, mergeArrays(temporaryBytes, value));
+                                    writeLongDescriptorTemporaryBytes.put(descriptor, mergeArrays(temporaryBytes, safeValue));
                                 } else {
                                     status = GattStatus.INVALID_OFFSET;
                                 }
@@ -262,7 +262,7 @@ public class PeripheralManager {
                     }
 
                     if (responseNeeded) {
-                        bluetoothGattServer.sendResponse(device, requestId, status.getValue(), offset, null);
+                        bluetoothGattServer.sendResponse(device, requestId, status.getValue(), offset, safeValue);
                     }
 
                     if (status == GattStatus.SUCCESS && descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
