@@ -78,6 +78,12 @@ public class PeripheralManager {
     @NotNull
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
 
+    @NotNull
+    private final HashMap<BluetoothGattCharacteristic, byte[]> writeLongCharacteristicTemporaryBytes = new HashMap<>();
+
+    @NotNull
+    private final HashMap<BluetoothGattDescriptor, byte[]> writeLongDescriptorTemporaryBytes = new HashMap<>();
+
     private volatile boolean commandQueueBusy = false;
 
 
@@ -143,6 +149,7 @@ public class PeripheralManager {
             mainHandler.post(() -> {
                 final Central central = getCentral(device);
                 if (central != null) {
+                    // Call onCharacteristic before any responses are sent, even if it is a long read
                     if (offset == 0) {
                         callback.onCharacteristicRead(central, characteristic);
                     }
@@ -164,9 +171,6 @@ public class PeripheralManager {
             }
             return Arrays.copyOf(source, source.length);
         }
-
-        @NotNull
-        private final HashMap<BluetoothGattCharacteristic, byte[]> writeLongCharacteristicTemporaryBytes = new HashMap<>();
 
         @Override
         public void onCharacteristicWriteRequest(@NotNull final BluetoothDevice device, final int requestId, @NotNull final BluetoothGattCharacteristic characteristic, final boolean preparedWrite, final boolean responseNeeded, final int offset, @Nullable final byte[] value) {
@@ -222,9 +226,6 @@ public class PeripheralManager {
                 }
             });
         }
-
-        @NotNull
-        private final HashMap<BluetoothGattDescriptor, byte[]> writeLongDescriptorTemporaryBytes = new HashMap<>();
 
         @Override
         public void onDescriptorWriteRequest(@NotNull final BluetoothDevice device, final int requestId, @NotNull final BluetoothGattDescriptor descriptor, final boolean preparedWrite, final boolean responseNeeded, final int offset, @Nullable final byte[] value) {
@@ -288,7 +289,7 @@ public class PeripheralManager {
             } else if (!(Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
                     || Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
                     || Arrays.equals(safeValue, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE))) {
-                status = GattStatus.REQUEST_NOT_SUPPORTED;
+                status = GattStatus.VALUE_NOT_ALLOWED;
             } else if (!supportsIndicate(characteristic) && Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) {
                 status = GattStatus.REQUEST_NOT_SUPPORTED;
             } else if (!supportsNotify(characteristic) && Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
@@ -331,6 +332,7 @@ public class PeripheralManager {
             } else {
                 // Long write was cancelled
                 writeLongCharacteristicTemporaryBytes.clear();
+                writeLongDescriptorTemporaryBytes.clear();
                 bluetoothGattServer.sendResponse(device, requestId, GattStatus.SUCCESS.getValue(), 0, null);
             }
         }
@@ -362,15 +364,15 @@ public class PeripheralManager {
 
     private final AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
-        public void onStartSuccess(AdvertiseSettings settingsInEffect) {
-            super.onStartSuccess(settingsInEffect);
-            Timber.i("Advertising started");
+        public void onStartSuccess(final AdvertiseSettings settingsInEffect) {
+            mainHandler.post(() -> callback.onStartSuccess(settingsInEffect));
         }
 
         @Override
         public void onStartFailure(int errorCode) {
-            super.onStartFailure(errorCode);
-            Timber.i("Advertising failed");
+            final AdvertiseError advertiseError = AdvertiseError.fromValue(errorCode);
+            Timber.e("Advertising failed with error '%s'", advertiseError);
+            mainHandler.post(() -> callback.onStartFailure(advertiseError));
         }
     };
 

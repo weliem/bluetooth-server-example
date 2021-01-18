@@ -105,6 +105,16 @@ class BluetoothServer {
                 serviceImplementation.onCentralDisconnected(central);
             }
         }
+
+        @Override
+        public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+
+        }
+
+        @Override
+        public void onStartFailure(AdvertiseError advertiseError) {
+
+        }
     };
 
     public void startAdvertising(UUID serviceUUID) {

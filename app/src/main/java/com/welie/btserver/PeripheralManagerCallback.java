@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.le.AdvertiseSettings;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -33,5 +34,9 @@ interface PeripheralManagerCallback {
     void onCentralConnected(@NotNull Central central);
 
     void onCentralDisconnected(@NotNull Central central);
+
+    void onStartSuccess(AdvertiseSettings settingsInEffect);
+
+    void onStartFailure(AdvertiseError advertiseError);
 }
 
