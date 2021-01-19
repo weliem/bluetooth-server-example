@@ -1,7 +1,6 @@
 package com.welie.btserver;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
@@ -23,7 +22,7 @@ class BluetoothServer {
     private static BluetoothServer instance = null;
 
     @NotNull
-    private final PeripheralManager peripheralManager;
+    private final BluetoothPeripheralManager peripheralManager;
 
     public static synchronized BluetoothServer getInstance(Context context) {
         if (instance == null) {
@@ -32,7 +31,7 @@ class BluetoothServer {
         return instance;
     }
 
-    private final PeripheralManagerCallback peripheralManagerCallback = new PeripheralManagerCallback() {
+    private final BluetoothPeripheralManagerCallback peripheralManagerCallback = new BluetoothPeripheralManagerCallback() {
         @Override
         public void onServiceAdded(int status, @NotNull BluetoothGattService service) {
 
@@ -157,7 +156,7 @@ class BluetoothServer {
         }
 
         bluetoothAdapter.setName("Nokia 8");
-        this.peripheralManager = new PeripheralManager(context, bluetoothManager, peripheralManagerCallback);
+        this.peripheralManager = new BluetoothPeripheralManager(context, bluetoothManager, peripheralManagerCallback);
         this.peripheralManager.removeAllServices();
 
         DeviceInformationService dis = new DeviceInformationService(peripheralManager);

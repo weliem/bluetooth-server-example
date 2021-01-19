@@ -1,6 +1,5 @@
 package com.welie.btserver;
 
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
@@ -12,15 +11,15 @@ import java.util.Objects;
 
 import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_READ;
 import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_WRITE;
-import static com.welie.btserver.PeripheralManager.CCC_DESCRIPTOR_UUID;
-import static com.welie.btserver.PeripheralManager.CUD_DESCRIPTOR_UUID;
+import static com.welie.btserver.BluetoothPeripheralManager.CCC_DESCRIPTOR_UUID;
+import static com.welie.btserver.BluetoothPeripheralManager.CUD_DESCRIPTOR_UUID;
 
 class BaseService implements Service {
 
     @NotNull
-    protected final PeripheralManager peripheralManager;
+    protected final BluetoothPeripheralManager peripheralManager;
 
-    BaseService(@NotNull PeripheralManager peripheralManager) {
+    BaseService(@NotNull BluetoothPeripheralManager peripheralManager) {
         this.peripheralManager = Objects.requireNonNull(peripheralManager);
     }
 

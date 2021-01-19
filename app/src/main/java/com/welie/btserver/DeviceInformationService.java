@@ -20,7 +20,7 @@ class DeviceInformationService extends BaseService {
 
     private @NotNull final BluetoothGattService service = new BluetoothGattService(DIS_SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
-    public DeviceInformationService(@NotNull PeripheralManager peripheralManager) {
+    public DeviceInformationService(@NotNull BluetoothPeripheralManager peripheralManager) {
         super(peripheralManager);
 
         BluetoothGattCharacteristic manufacturer = new BluetoothGattCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC_UUID, PROPERTY_READ | PROPERTY_WRITE, PERMISSION_READ | PERMISSION_WRITE);

@@ -39,7 +39,7 @@ class GenericHealthSensorService extends BaseService {
     @NotNull
     private final Runnable notifyRunnable = this::sendObservations;
 
-    public GenericHealthSensorService(@NotNull PeripheralManager peripheralManager) {
+    public GenericHealthSensorService(@NotNull BluetoothPeripheralManager peripheralManager) {
         super(peripheralManager);
         service.addCharacteristic(observationCharacteristic);
         service.addCharacteristic(controlCharacteristic);
@@ -100,7 +100,7 @@ class GenericHealthSensorService extends BaseService {
 
     private void stopNotifying() {
         handler.removeCallbacks(notifyRunnable);
-        observationCharacteristic.getDescriptor(PeripheralManager.CCC_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+        observationCharacteristic.getDescriptor(BluetoothPeripheralManager.CCC_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
     }
 
     private void sendObservations() {

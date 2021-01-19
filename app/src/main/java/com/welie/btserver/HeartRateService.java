@@ -1,7 +1,6 @@
 package com.welie.btserver;
 
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,7 +26,7 @@ class HeartRateService extends BaseService {
     private @NotNull final Runnable notifyRunnable = this::notifyHeartRate;
     private int currentHR = 80;
 
-    public HeartRateService(@NotNull PeripheralManager peripheralManager) {
+    public HeartRateService(@NotNull BluetoothPeripheralManager peripheralManager) {
         super(peripheralManager);
         service.addCharacteristic(measurement);
         measurement.setValue(new byte[]{0x00, 0x40});

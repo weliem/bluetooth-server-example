@@ -40,7 +40,7 @@ import static com.welie.btserver.BluetoothBytesParser.bytes2String;
 import static com.welie.btserver.BluetoothBytesParser.mergeArrays;
 
 @SuppressWarnings("UnusedReturnValue")
-public class PeripheralManager {
+public class BluetoothPeripheralManager {
 
     public static final UUID CUD_DESCRIPTOR_UUID = UUID.fromString("00002901-0000-1000-8000-00805f9b34fb");
     public static final UUID CCC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
@@ -73,7 +73,7 @@ public class PeripheralManager {
     private final BluetoothGattServer bluetoothGattServer;
 
     @NotNull
-    private final PeripheralManagerCallback callback;
+    private final BluetoothPeripheralManagerCallback callback;
 
     @NotNull
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
@@ -353,7 +353,7 @@ public class PeripheralManager {
         }
     };
 
-    public PeripheralManager(@NotNull Context context, @NotNull BluetoothManager bluetoothManager, @NotNull PeripheralManagerCallback callback) {
+    public BluetoothPeripheralManager(@NotNull Context context, @NotNull BluetoothManager bluetoothManager, @NotNull BluetoothPeripheralManagerCallback callback) {
         this.context = Objects.requireNonNull(context, CONTEXT_IS_NULL);
         this.callback = Objects.requireNonNull(callback, "Callback is null");
         this.bluetoothManager = Objects.requireNonNull(bluetoothManager, BLUETOOTH_MANAGER_IS_NULL);

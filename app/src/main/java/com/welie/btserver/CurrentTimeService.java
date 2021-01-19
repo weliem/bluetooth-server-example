@@ -23,7 +23,7 @@ class CurrentTimeService extends BaseService {
     private @NotNull final Handler handler = new Handler(Looper.getMainLooper());
     private @NotNull final Runnable notifyRunnable = this::notifyCurrentTime;
 
-    public CurrentTimeService(@NotNull PeripheralManager peripheralManager) {
+    public CurrentTimeService(@NotNull BluetoothPeripheralManager peripheralManager) {
         super(peripheralManager);
         service.addCharacteristic(currentTime);
         currentTime.addDescriptor(getCccDescriptor());
