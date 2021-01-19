@@ -34,11 +34,6 @@ class HeartRateService extends BaseService {
     }
 
     @Override
-    public @NotNull BluetoothGattService getService() {
-        return service;
-    }
-
-    @Override
     public void onCentralDisconnected(@NotNull Central central) {
         if (noCentralsConnected()) {
             stopNotifying();
@@ -70,5 +65,15 @@ class HeartRateService extends BaseService {
 
     private void stopNotifying() {
         handler.removeCallbacks(notifyRunnable);
+    }
+
+    @Override
+    public @NotNull BluetoothGattService getService() {
+        return service;
+    }
+
+    @Override
+    public String getServiceName() {
+        return "HeartRate Service";
     }
 }

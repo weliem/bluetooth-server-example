@@ -62,4 +62,9 @@ class CurrentTimeService extends BaseService {
     public @NotNull BluetoothGattService getService() {
         return service;
     }
+
+    @Override
+    public String getServiceName() {
+        return "Current Time Service";
+    }
 }

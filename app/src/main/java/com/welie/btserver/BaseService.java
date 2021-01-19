@@ -50,6 +50,11 @@ class BaseService implements Service {
     }
 
     @Override
+    public String getServiceName() {
+        return "";
+    }
+
+    @Override
     public void onCharacteristicRead(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
 
     }

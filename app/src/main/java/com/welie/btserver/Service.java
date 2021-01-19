@@ -10,6 +10,8 @@ interface Service {
 
     BluetoothGattService getService();
 
+    String getServiceName();
+
     void onCharacteristicRead(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic);
 
     GattStatus onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value);

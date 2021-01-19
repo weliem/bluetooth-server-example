@@ -133,4 +133,9 @@ class GenericHealthSensorService extends BaseService {
     public @NotNull BluetoothGattService getService() {
         return service;
     }
+
+    @Override
+    public String getServiceName() {
+        return "General Health Service";
+    }
 }
