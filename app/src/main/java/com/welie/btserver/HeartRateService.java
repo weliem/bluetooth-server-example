@@ -12,23 +12,19 @@ import java.util.UUID;
 
 import timber.log.Timber;
 
+import static android.bluetooth.BluetoothGattCharacteristic.PERMISSION_READ;
+import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_INDICATE;
+import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ;
+
 class HeartRateService extends BaseService {
 
     private static final UUID HRS_SERVICE_UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb");
     private static final UUID HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb");
 
-    @NotNull
-    BluetoothGattService service = new BluetoothGattService(HRS_SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
-
-    @NotNull
-    BluetoothGattCharacteristic measurement = new BluetoothGattCharacteristic(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID, BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_INDICATE,BluetoothGattCharacteristic.PERMISSION_READ);
-
-    @NotNull
-    private final Handler handler = new Handler(Looper.getMainLooper());
-
-    @NotNull
-    private final Runnable notifyRunnable = this::notifyHeartRate;
-
+    private @NotNull final BluetoothGattService service = new BluetoothGattService(HRS_SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+    private @NotNull final BluetoothGattCharacteristic measurement = new BluetoothGattCharacteristic(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ | PROPERTY_INDICATE, PERMISSION_READ);
+    private @NotNull final Handler handler = new Handler(Looper.getMainLooper());
+    private @NotNull final Runnable notifyRunnable = this::notifyHeartRate;
     private int currentHR = 80;
 
     public HeartRateService(@NotNull PeripheralManager peripheralManager) {
@@ -68,13 +64,12 @@ class HeartRateService extends BaseService {
         currentHR += (int) ((Math.random() * 10) - 5);
         measurement.setValue(new byte[]{0x00, (byte) currentHR});
         notifyCharacteristicChanged(measurement);
-        Timber.i("new hr: %d", currentHR);
-
         handler.postDelayed(notifyRunnable, 1000);
+
+        Timber.i("new hr: %d", currentHR);
     }
 
     private void stopNotifying() {
         handler.removeCallbacks(notifyRunnable);
-        measurement.getDescriptor(PeripheralManager.CCC_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
     }
 }

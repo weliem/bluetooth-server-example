@@ -107,12 +107,12 @@ class BluetoothServer {
         }
 
         @Override
-        public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+        public void onStartSuccess(@NotNull AdvertiseSettings settingsInEffect) {
 
         }
 
         @Override
-        public void onStartFailure(AdvertiseError advertiseError) {
+        public void onStartFailure(@NotNull AdvertiseError advertiseError) {
 
         }
     };
@@ -158,6 +158,7 @@ class BluetoothServer {
 
         bluetoothAdapter.setName("Nokia 8");
         this.peripheralManager = new PeripheralManager(context, bluetoothManager, peripheralManagerCallback);
+        this.peripheralManager.removeAllServices();
 
         DeviceInformationService dis = new DeviceInformationService(peripheralManager);
         CurrentTimeService cts = new CurrentTimeService(peripheralManager);

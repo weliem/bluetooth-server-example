@@ -84,11 +84,10 @@ public class PeripheralManager {
     @NotNull
     private final HashMap<BluetoothGattDescriptor, byte[]> writeLongDescriptorTemporaryBytes = new HashMap<>();
 
-    private volatile boolean commandQueueBusy = false;
-
-
     @NotNull
     private final Map<String, Central> connectedCentrals = new ConcurrentHashMap<>();
+
+    private volatile boolean commandQueueBusy = false;
 
     private final BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
         @Override
@@ -130,9 +129,7 @@ public class PeripheralManager {
         private void handleDeviceDisconnected(BluetoothDevice device) {
             Timber.i("Device '%s' disconnected", device.getName());
             final Central central = getCentral(device);
-            if (central != null) {
-                mainHandler.post(() -> callback.onCentralDisconnected(central));
-            }
+            mainHandler.post(() -> callback.onCentralDisconnected(central));
             removeCentral(device);
         }
 
@@ -146,30 +143,18 @@ public class PeripheralManager {
         public void onCharacteristicReadRequest(@NotNull final BluetoothDevice device, final int requestId, final int offset, @NotNull final BluetoothGattCharacteristic characteristic) {
             Timber.i("read request for characteristic <%s> with offset %d", characteristic.getUuid(), offset);
 
+            final Central central = getCentral(device);
             mainHandler.post(() -> {
-                final Central central = getCentral(device);
-                if (central != null) {
-                    // Call onCharacteristic before any responses are sent, even if it is a long read
-                    if (offset == 0) {
-                        callback.onCharacteristicRead(central, characteristic);
-                    }
-
-                    // If data is longer than MTU - 1, cut the array. Only ATT_MTU - 1 bytes can be sent in Long Read.
-                    final byte[] value = copyOf(nonnullOf(characteristic.getValue()), offset, central.getCurrentMtu() - 1);
-
-                    bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+                // Call onCharacteristic before any responses are sent, even if it is a long read
+                if (offset == 0) {
+                    callback.onCharacteristicRead(central, characteristic);
                 }
-            });
-        }
 
-        private @NotNull byte[] copyOf(@NotNull byte[] source, int offset, int maxSize) {
-            if (source.length > maxSize) {
-                final int chunkSize = Math.min(source.length - offset, maxSize);
-                final byte[] result = new byte[chunkSize];
-                System.arraycopy(source, offset, result, 0, chunkSize);
-                return result;
-            }
-            return Arrays.copyOf(source, source.length);
+                // If data is longer than MTU - 1, cut the array. Only ATT_MTU - 1 bytes can be sent in Long Read.
+                final byte[] value = copyOf(nonnullOf(characteristic.getValue()), offset, central.getCurrentMtu() - 1);
+
+                bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+            });
         }
 
         @Override
@@ -177,33 +162,30 @@ public class PeripheralManager {
             Timber.i("write characteristic %s request <%s> offset %d for <%s>", responseNeeded ? "WITH_RESPONSE" : "WITHOUT_RESPONSE", bytes2String(value), offset, characteristic.getUuid());
 
             final byte[] safeValue = nonnullOf(value);
+            final Central central = getCentral(device);
             mainHandler.post(() -> {
-                final Central central = getCentral(device);
-                if (central != null) {
-                    GattStatus status = GattStatus.SUCCESS;
+                GattStatus status = GattStatus.SUCCESS;
+                if (!preparedWrite) {
+                    status = callback.onCharacteristicWrite(central, characteristic, safeValue);
 
-                    if (!preparedWrite) {
-                        status = callback.onCharacteristicWrite(central, characteristic, safeValue);
-
-                        if (status == GattStatus.SUCCESS) {
-                            characteristic.setValue(safeValue);
-                        }
+                    if (status == GattStatus.SUCCESS) {
+                        characteristic.setValue(safeValue);
+                    }
+                } else {
+                    if (offset == 0) {
+                        writeLongCharacteristicTemporaryBytes.put(characteristic, safeValue);
                     } else {
-                        if (offset == 0) {
-                            writeLongCharacteristicTemporaryBytes.put(characteristic, safeValue);
+                        byte[] temporaryBytes = writeLongCharacteristicTemporaryBytes.get(characteristic);
+                        if (temporaryBytes != null && offset == temporaryBytes.length) {
+                            writeLongCharacteristicTemporaryBytes.put(characteristic, mergeArrays(temporaryBytes, safeValue));
                         } else {
-                            byte[] temporaryBytes = writeLongCharacteristicTemporaryBytes.get(characteristic);
-                            if (temporaryBytes != null && offset == temporaryBytes.length) {
-                                writeLongCharacteristicTemporaryBytes.put(characteristic, mergeArrays(temporaryBytes, safeValue));
-                            } else {
-                                status = GattStatus.INVALID_OFFSET;
-                            }
+                            status = GattStatus.INVALID_OFFSET;
                         }
                     }
+                }
 
-                    if (responseNeeded) {
-                        bluetoothGattServer.sendResponse(device, requestId, status.getValue(), offset, safeValue);
-                    }
+                if (responseNeeded) {
+                    bluetoothGattServer.sendResponse(device, requestId, status.getValue(), offset, safeValue);
                 }
             });
         }
@@ -212,18 +194,17 @@ public class PeripheralManager {
         public void onDescriptorReadRequest(@NotNull final BluetoothDevice device, int requestId, int offset, final BluetoothGattDescriptor descriptor) {
             Timber.i("read request for descriptor <%s> with offset %d", descriptor.getUuid(), offset);
 
+            final Central central = getCentral(device);
             mainHandler.post(() -> {
-                final Central central = getCentral(device);
-                if (central != null) {
-                    if (offset == 0) {
-                        callback.onDescriptorRead(central, descriptor);
-                    }
-
-                    // If data is longer than MTU - 1, cut the array. Only ATT_MTU - 1 bytes can be sent in Long Read.
-                    final byte[] value = copyOf(nonnullOf(descriptor.getValue()), offset, central.getCurrentMtu() - 1);
-
-                    bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+                // Call onDescriptorRead before any responses are sent, even if it is a long read
+                if (offset == 0) {
+                    callback.onDescriptorRead(central, descriptor);
                 }
+
+                // If data is longer than MTU - 1, cut the array. Only ATT_MTU - 1 bytes can be sent in Long Read.
+                final byte[] value = copyOf(nonnullOf(descriptor.getValue()), offset, central.getCurrentMtu() - 1);
+
+                bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
             });
         }
 
@@ -234,47 +215,45 @@ public class PeripheralManager {
 
             Timber.i("write descriptor %s request <%s> offset %d for <%s>", responseNeeded ? "WITH_RESPONSE" : "WITHOUT_RESPONSE", bytes2String(value), offset, descriptor.getUuid());
 
+            final Central central = getCentral(device);
             mainHandler.post(() -> {
-                final Central central = getCentral(device);
-                if (central != null) {
-                    GattStatus status = GattStatus.SUCCESS;
-                    if (descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
-                        status = checkCccDescriptorValue(safeValue, characteristic);
+                GattStatus status = GattStatus.SUCCESS;
+                if (descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
+                    status = checkCccDescriptorValue(safeValue, characteristic);
+                } else {
+                    if (!preparedWrite) {
+                        // Ask callback if value is ok or not
+                        status = callback.onDescriptorWrite(central, descriptor, safeValue);
                     } else {
-                        if (!preparedWrite) {
-                            // Ask callback if value is ok or not
-                            status = callback.onDescriptorWrite(central, descriptor, safeValue);
+                        if (offset == 0) {
+                            writeLongDescriptorTemporaryBytes.put(descriptor, safeValue);
                         } else {
-                            if (offset == 0) {
-                                writeLongDescriptorTemporaryBytes.put(descriptor, safeValue);
+                            byte[] temporaryBytes = writeLongDescriptorTemporaryBytes.get(descriptor);
+                            if (temporaryBytes != null && offset == temporaryBytes.length) {
+                                writeLongDescriptorTemporaryBytes.put(descriptor, mergeArrays(temporaryBytes, safeValue));
                             } else {
-                                byte[] temporaryBytes = writeLongDescriptorTemporaryBytes.get(descriptor);
-                                if (temporaryBytes != null && offset == temporaryBytes.length) {
-                                    writeLongDescriptorTemporaryBytes.put(descriptor, mergeArrays(temporaryBytes, safeValue));
-                                } else {
-                                    status = GattStatus.INVALID_OFFSET;
-                                }
+                                status = GattStatus.INVALID_OFFSET;
                             }
                         }
                     }
+                }
 
-                    if (status == GattStatus.SUCCESS && !preparedWrite) {
-                        descriptor.setValue(safeValue);
-                    }
+                if (status == GattStatus.SUCCESS && !preparedWrite) {
+                    descriptor.setValue(safeValue);
+                }
 
-                    if (responseNeeded) {
-                        bluetoothGattServer.sendResponse(device, requestId, status.getValue(), offset, safeValue);
-                    }
+                if (responseNeeded) {
+                    bluetoothGattServer.sendResponse(device, requestId, status.getValue(), offset, safeValue);
+                }
 
-                    if (status == GattStatus.SUCCESS && descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
-                        if (Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
-                                || Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-                            Timber.i("notifying enabled for <%s>", characteristic.getUuid());
-                            callback.onNotifyingEnabled(central, characteristic);
-                        } else {
-                            Timber.i("notifying disabled for <%s>", characteristic.getUuid());
-                            callback.onNotifyingDisabled(central, characteristic);
-                        }
+                if (status == GattStatus.SUCCESS && descriptor.getUuid().equals(CCC_DESCRIPTOR_UUID)) {
+                    if (Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
+                            || Arrays.equals(safeValue, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
+                        Timber.i("notifying enabled for <%s>", characteristic.getUuid());
+                        callback.onNotifyingEnabled(central, characteristic);
+                    } else {
+                        Timber.i("notifying disabled for <%s>", characteristic.getUuid());
+                        callback.onNotifyingDisabled(central, characteristic);
                     }
                 }
             });
@@ -300,37 +279,37 @@ public class PeripheralManager {
 
         @Override
         public void onExecuteWrite(final BluetoothDevice device, final int requestId, final boolean execute) {
+            final Central central = getCentral(device);
             if (execute) {
                 mainHandler.post(() -> {
                     GattStatus status = GattStatus.SUCCESS;
-                    final Central central = getCentral(device);
-                    if (central != null) {
-                        if (!writeLongCharacteristicTemporaryBytes.isEmpty()) {
-                            BluetoothGattCharacteristic characteristic = writeLongCharacteristicTemporaryBytes.keySet().iterator().next();
-                            if (characteristic != null) {
-                                status = callback.onCharacteristicWrite(central, characteristic, writeLongCharacteristicTemporaryBytes.get(characteristic));
+                    if (!writeLongCharacteristicTemporaryBytes.isEmpty()) {
+                        BluetoothGattCharacteristic characteristic = writeLongCharacteristicTemporaryBytes.keySet().iterator().next();
+                        if (characteristic != null) {
+                            // Ask callback if value is ok or not
+                            status = callback.onCharacteristicWrite(central, characteristic, writeLongCharacteristicTemporaryBytes.get(characteristic));
 
-                                if (status == GattStatus.SUCCESS) {
-                                    characteristic.setValue(writeLongCharacteristicTemporaryBytes.get(characteristic));
-                                    writeLongCharacteristicTemporaryBytes.clear();
-                                }
+                            if (status == GattStatus.SUCCESS) {
+                                characteristic.setValue(writeLongCharacteristicTemporaryBytes.get(characteristic));
+                                writeLongCharacteristicTemporaryBytes.clear();
                             }
-                        } else if(!writeLongDescriptorTemporaryBytes.isEmpty()) {
-                            BluetoothGattDescriptor descriptor = writeLongDescriptorTemporaryBytes.keySet().iterator().next();
-                            if (descriptor != null) {
-                                status = callback.onDescriptorWrite(central, descriptor, writeLongDescriptorTemporaryBytes.get(descriptor));
+                        }
+                    } else if (!writeLongDescriptorTemporaryBytes.isEmpty()) {
+                        BluetoothGattDescriptor descriptor = writeLongDescriptorTemporaryBytes.keySet().iterator().next();
+                        if (descriptor != null) {
+                            // Ask callback if value is ok or not
+                            status = callback.onDescriptorWrite(central, descriptor, writeLongDescriptorTemporaryBytes.get(descriptor));
 
-                                if (status == GattStatus.SUCCESS) {
-                                    descriptor.setValue(writeLongDescriptorTemporaryBytes.get(descriptor));
-                                    writeLongDescriptorTemporaryBytes.clear();
-                                }
+                            if (status == GattStatus.SUCCESS) {
+                                descriptor.setValue(writeLongDescriptorTemporaryBytes.get(descriptor));
+                                writeLongDescriptorTemporaryBytes.clear();
                             }
                         }
                     }
                     bluetoothGattServer.sendResponse(device, requestId, status.getValue(), 0, null);
                 });
             } else {
-                // Long write was cancelled
+                // Long write was cancelled, clean up already received bytes
                 writeLongCharacteristicTemporaryBytes.clear();
                 writeLongDescriptorTemporaryBytes.clear();
                 bluetoothGattServer.sendResponse(device, requestId, GattStatus.SUCCESS.getValue(), 0, null);
@@ -346,9 +325,7 @@ public class PeripheralManager {
         public void onMtuChanged(BluetoothDevice device, int mtu) {
             Timber.i("new MTU: %d", mtu);
             Central central = getCentral(device);
-            if (central != null) {
-                central.setCurrentMtu(mtu);
-            }
+            central.setCurrentMtu(mtu);
         }
 
         @Override
@@ -424,8 +401,7 @@ public class PeripheralManager {
     public boolean remove(@NotNull BluetoothGattService service) {
         Objects.requireNonNull(service, SERVICE_IS_NULL);
 
-        bluetoothGattServer.removeService(service);
-        return true;
+        return bluetoothGattServer.removeService(service);
     }
 
     public void removeAllServices() {
@@ -537,17 +513,31 @@ public class PeripheralManager {
         }
     }
 
-    @Nullable
+    @NotNull
     private Central getCentral(@NotNull BluetoothDevice device) {
         Objects.requireNonNull(device, DEVICE_IS_NULL);
 
-        return connectedCentrals.get(device.getAddress());
+        Central result = connectedCentrals.get(device.getAddress());
+        if (result == null) {
+            result = new Central(device.getAddress(), device.getName());
+        }
+        return result;
     }
 
     private void removeCentral(@NotNull BluetoothDevice device) {
         Objects.requireNonNull(device, DEVICE_IS_NULL);
 
         connectedCentrals.remove(device.getAddress());
+    }
+
+    private @NotNull byte[] copyOf(@NotNull byte[] source, int offset, int maxSize) {
+        if (source.length > maxSize) {
+            final int chunkSize = Math.min(source.length - offset, maxSize);
+            final byte[] result = new byte[chunkSize];
+            System.arraycopy(source, offset, result, 0, chunkSize);
+            return result;
+        }
+        return Arrays.copyOf(source, source.length);
     }
 
     /**

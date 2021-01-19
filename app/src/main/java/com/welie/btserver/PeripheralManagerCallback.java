@@ -35,8 +35,8 @@ interface PeripheralManagerCallback {
 
     void onCentralDisconnected(@NotNull Central central);
 
-    void onStartSuccess(AdvertiseSettings settingsInEffect);
+    void onStartSuccess(@NotNull AdvertiseSettings settingsInEffect);
 
-    void onStartFailure(AdvertiseError advertiseError);
+    void onStartFailure(@NotNull AdvertiseError advertiseError);
 }
 
