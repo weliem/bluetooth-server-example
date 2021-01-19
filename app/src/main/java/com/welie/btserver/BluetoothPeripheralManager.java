@@ -45,7 +45,6 @@ public class BluetoothPeripheralManager {
     public static final UUID CUD_DESCRIPTOR_UUID = UUID.fromString("00002901-0000-1000-8000-00805f9b34fb");
     public static final UUID CCC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
-    // Error strings when nullability checks fail
     private static final String CONTEXT_IS_NULL = "Context is null";
     private static final String BLUETOOTH_MANAGER_IS_NULL = "BluetoothManager is null";
     private static final String SERVICE_IS_NULL = "service is null";
@@ -54,39 +53,17 @@ public class BluetoothPeripheralManager {
     private static final String CHARACTERISTIC_VALUE_IS_NULL = "Characteristic value is null";
     private static final String CENTRAL_IS_NULL = "Central is null";
 
-    @NotNull
-    private final Context context;
-
-    @NotNull
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
-
-    @NotNull
-    private final BluetoothManager bluetoothManager;
-
-    @NotNull
-    private final BluetoothAdapter bluetoothAdapter;
-
-    @NotNull
-    private final BluetoothLeAdvertiser bluetoothLeAdvertiser;
-
-    @NotNull
-    private final BluetoothGattServer bluetoothGattServer;
-
-    @NotNull
-    private final BluetoothPeripheralManagerCallback callback;
-
-    @NotNull
-    private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
-
-    @NotNull
-    private final HashMap<BluetoothGattCharacteristic, byte[]> writeLongCharacteristicTemporaryBytes = new HashMap<>();
-
-    @NotNull
-    private final HashMap<BluetoothGattDescriptor, byte[]> writeLongDescriptorTemporaryBytes = new HashMap<>();
-
-    @NotNull
-    private final Map<String, Central> connectedCentrals = new ConcurrentHashMap<>();
-
+    private @NotNull final Context context;
+    private @NotNull final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private @NotNull final BluetoothManager bluetoothManager;
+    private @NotNull final BluetoothAdapter bluetoothAdapter;
+    private @NotNull final BluetoothLeAdvertiser bluetoothLeAdvertiser;
+    private @NotNull final BluetoothGattServer bluetoothGattServer;
+    private @NotNull final BluetoothPeripheralManagerCallback callback;
+    private @NotNull final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
+    private @NotNull final HashMap<BluetoothGattCharacteristic, byte[]> writeLongCharacteristicTemporaryBytes = new HashMap<>();
+    private @NotNull final HashMap<BluetoothGattDescriptor, byte[]> writeLongDescriptorTemporaryBytes = new HashMap<>();
+    private @NotNull final Map<String, Central> connectedCentrals = new ConcurrentHashMap<>();
     private volatile boolean commandQueueBusy = false;
 
     private final BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
@@ -119,14 +96,14 @@ public class BluetoothPeripheralManager {
             }
         }
 
-        private void handleDeviceConnected(BluetoothDevice device) {
+        private void handleDeviceConnected(@NotNull final BluetoothDevice device) {
             Timber.i("Device '%s' connected", device.getName());
             final Central central = new Central(device.getAddress(), device.getName());
             connectedCentrals.put(central.getAddress(), central);
             mainHandler.post(() -> callback.onCentralConnected(central));
         }
 
-        private void handleDeviceDisconnected(BluetoothDevice device) {
+        private void handleDeviceDisconnected(@NotNull final BluetoothDevice device) {
             Timber.i("Device '%s' disconnected", device.getName());
             final Central central = getCentral(device);
             mainHandler.post(() -> callback.onCentralDisconnected(central));
@@ -134,7 +111,7 @@ public class BluetoothPeripheralManager {
         }
 
         @Override
-        public void onServiceAdded(int status, final BluetoothGattService service) {
+        public void onServiceAdded(final int status, @NotNull final BluetoothGattService service) {
             mainHandler.post(() -> callback.onServiceAdded(status, service));
             completedCommand();
         }
@@ -191,7 +168,7 @@ public class BluetoothPeripheralManager {
         }
 
         @Override
-        public void onDescriptorReadRequest(@NotNull final BluetoothDevice device, int requestId, int offset, final BluetoothGattDescriptor descriptor) {
+        public void onDescriptorReadRequest(@NotNull final BluetoothDevice device, final int requestId, final int offset, @NotNull final BluetoothGattDescriptor descriptor) {
             Timber.i("read request for descriptor <%s> with offset %d", descriptor.getUuid(), offset);
 
             final Central central = getCentral(device);
@@ -278,7 +255,7 @@ public class BluetoothPeripheralManager {
         }
 
         @Override
-        public void onExecuteWrite(final BluetoothDevice device, final int requestId, final boolean execute) {
+        public void onExecuteWrite(@NotNull final BluetoothDevice device, final int requestId, final boolean execute) {
             final Central central = getCentral(device);
             if (execute) {
                 mainHandler.post(() -> {
@@ -317,31 +294,31 @@ public class BluetoothPeripheralManager {
         }
 
         @Override
-        public void onNotificationSent(BluetoothDevice device, int status) {
+        public void onNotificationSent(@NotNull BluetoothDevice device, final int status) {
             completedCommand();
         }
 
         @Override
-        public void onMtuChanged(BluetoothDevice device, int mtu) {
+        public void onMtuChanged(@NotNull BluetoothDevice device, int mtu) {
             Timber.i("new MTU: %d", mtu);
             Central central = getCentral(device);
             central.setCurrentMtu(mtu);
         }
 
         @Override
-        public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {
+        public void onPhyUpdate(@NotNull BluetoothDevice device, int txPhy, int rxPhy, int status) {
             super.onPhyUpdate(device, txPhy, rxPhy, status);
         }
 
         @Override
-        public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {
+        public void onPhyRead(@NotNull BluetoothDevice device, int txPhy, int rxPhy, int status) {
             super.onPhyRead(device, txPhy, rxPhy, status);
         }
     };
 
     private final AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
-        public void onStartSuccess(final AdvertiseSettings settingsInEffect) {
+        public void onStartSuccess(@NotNull final AdvertiseSettings settingsInEffect) {
             mainHandler.post(() -> callback.onStartSuccess(settingsInEffect));
         }
 
@@ -551,11 +528,11 @@ public class BluetoothPeripheralManager {
         return (source == null) ? new byte[0] : source;
     }
 
-    private boolean supportsNotify(BluetoothGattCharacteristic characteristic) {
+    private boolean supportsNotify(@NotNull BluetoothGattCharacteristic characteristic) {
         return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0;
     }
 
-    private boolean supportsIndicate(BluetoothGattCharacteristic characteristic) {
+    private boolean supportsIndicate(@NotNull BluetoothGattCharacteristic characteristic) {
         return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0;
     }
 
