@@ -8,6 +8,9 @@ import static android.bluetooth.le.AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_E
 import static android.bluetooth.le.AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED;
 import static android.bluetooth.le.AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS;
 
+/**
+ * This enum describes all possible errors that can occur when trying to start advertising
+ */
 public enum AdvertiseError {
     /**
      * Failed to start advertising as the advertise data to be broadcasted is larger than 31 bytes.
@@ -46,7 +49,7 @@ public enum AdvertiseError {
     }
 
     @NotNull
-    public static AdvertiseError fromValue(int value) {
+    static AdvertiseError fromValue(int value) {
         for (AdvertiseError type : values()) {
             if (type.getValue() == value)
                 return type;

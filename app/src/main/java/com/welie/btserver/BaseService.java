@@ -8,13 +8,15 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.UUID;
 
 import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_READ;
 import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_WRITE;
-import static com.welie.btserver.BluetoothPeripheralManager.CCC_DESCRIPTOR_UUID;
-import static com.welie.btserver.BluetoothPeripheralManager.CUD_DESCRIPTOR_UUID;
 
 class BaseService implements Service {
+
+    public static final UUID CUD_DESCRIPTOR_UUID = UUID.fromString("00002901-0000-1000-8000-00805f9b34fb");
+    public static final UUID CCC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     @NotNull
     protected final BluetoothPeripheralManager peripheralManager;

@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.content.Context;
+import android.os.Build;
 import android.os.ParcelUuid;
 
 import org.jetbrains.annotations.NotNull;
@@ -106,12 +107,17 @@ class BluetoothServer {
         }
 
         @Override
-        public void onStartSuccess(@NotNull AdvertiseSettings settingsInEffect) {
+        public void onAdvertisingStarted(@NotNull AdvertiseSettings settingsInEffect) {
 
         }
 
         @Override
-        public void onStartFailure(@NotNull AdvertiseError advertiseError) {
+        public void onAdvertiseFailure(@NotNull AdvertiseError advertiseError) {
+
+        }
+
+        @Override
+        public void onAdvertisingStopped() {
 
         }
     };
@@ -155,7 +161,7 @@ class BluetoothServer {
             Timber.e("not supporting advertising");
         }
 
-        bluetoothAdapter.setName("Nokia 8");
+        bluetoothAdapter.setName(Build.MODEL);
         this.peripheralManager = new BluetoothPeripheralManager(context, bluetoothManager, peripheralManagerCallback);
         this.peripheralManager.removeAllServices();
 

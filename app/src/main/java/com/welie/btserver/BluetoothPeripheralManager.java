@@ -14,7 +14,10 @@ import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -42,8 +45,7 @@ import static com.welie.btserver.BluetoothBytesParser.mergeArrays;
 @SuppressWarnings("UnusedReturnValue")
 public class BluetoothPeripheralManager {
 
-    public static final UUID CUD_DESCRIPTOR_UUID = UUID.fromString("00002901-0000-1000-8000-00805f9b34fb");
-    public static final UUID CCC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    private static final UUID CCC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     private static final String CONTEXT_IS_NULL = "Context is null";
     private static final String BLUETOOTH_MANAGER_IS_NULL = "BluetoothManager is null";
@@ -97,15 +99,15 @@ public class BluetoothPeripheralManager {
         }
 
         private void handleDeviceConnected(@NotNull final BluetoothDevice device) {
-            Timber.i("Device '%s' connected", device.getName());
+            Timber.i("Central '%s' (%s) connected", device.getName(), device.getAddress());
             final Central central = new Central(device.getAddress(), device.getName());
             connectedCentrals.put(central.getAddress(), central);
             mainHandler.post(() -> callback.onCentralConnected(central));
         }
 
         private void handleDeviceDisconnected(@NotNull final BluetoothDevice device) {
-            Timber.i("Device '%s' disconnected", device.getName());
             final Central central = getCentral(device);
+            Timber.i("Central '%s' (%s) disconnected", central.getName(), central.getAddress());
             mainHandler.post(() -> callback.onCentralDisconnected(central));
             removeCentral(device);
         }
@@ -319,17 +321,30 @@ public class BluetoothPeripheralManager {
     private final AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
         public void onStartSuccess(@NotNull final AdvertiseSettings settingsInEffect) {
-            mainHandler.post(() -> callback.onStartSuccess(settingsInEffect));
+            Timber.i("advertising started");
+            mainHandler.post(() -> callback.onAdvertisingStarted(settingsInEffect));
         }
 
         @Override
         public void onStartFailure(int errorCode) {
             final AdvertiseError advertiseError = AdvertiseError.fromValue(errorCode);
-            Timber.e("Advertising failed with error '%s'", advertiseError);
-            mainHandler.post(() -> callback.onStartFailure(advertiseError));
+            Timber.e("advertising failed with error '%s'", advertiseError);
+            mainHandler.post(() -> callback.onAdvertiseFailure(advertiseError));
         }
     };
 
+    protected void onAdvertisingStopped() {
+        Timber.i("advertising stopped");
+        mainHandler.post(() -> callback.onAdvertisingStopped());
+    }
+
+    /**
+     * Create a BluetoothPeripheralManager
+     *
+     * @param context the application context
+     * @param bluetoothManager a valid BluetoothManager
+     * @param callback an instance of BluetoothPeripheralManagerCallback where the callbacks will be handled
+     */
     public BluetoothPeripheralManager(@NotNull Context context, @NotNull BluetoothManager bluetoothManager, @NotNull BluetoothPeripheralManagerCallback callback) {
         this.context = Objects.requireNonNull(context, CONTEXT_IS_NULL);
         this.callback = Objects.requireNonNull(callback, "Callback is null");
@@ -338,13 +353,34 @@ public class BluetoothPeripheralManager {
         this.bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
         this.bluetoothGattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
-        Timber.i("Current advertising %d services", getServices().size());
+        // Register for broadcasts on BluetoothAdapter state change
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        context.registerReceiver(adapterStateReceiver, filter);
     }
 
+    /**
+     * Close the BluetoothPeripheralManager
+     *
+     * Application should call this method as early as possible after it is done with
+     * this BluetoothPeripheralManager.
+     *
+     */
     public void close() {
+        stopAdvertising();
+        context.unregisterReceiver(adapterStateReceiver);
         bluetoothGattServer.close();
     }
 
+    /**
+     * Start Bluetooth LE Advertising. The {@code advertiseData} will be broadcasted if the
+     * operation succeeds. The {@code scanResponse} is returned when a scanning device sends an
+     * active scan request. This method returns immediately, the operation status is delivered
+     * through {@link BluetoothPeripheralManagerCallback#onAdvertisingStarted(AdvertiseSettings)} or {@link BluetoothPeripheralManagerCallback#onAdvertiseFailure(AdvertiseError)}.
+     *
+     * @param settings the AdvertiseSettings
+     * @param advertiseData the AdvertiseData
+     * @param scanResponse the ScanResponse
+     */
     public void startAdvertising(AdvertiseSettings settings, AdvertiseData advertiseData, AdvertiseData scanResponse) {
         if (!bluetoothAdapter.isMultipleAdvertisementSupported()) {
             Timber.e("device does not support advertising");
@@ -353,10 +389,28 @@ public class BluetoothPeripheralManager {
         }
     }
 
+    /**
+     * Stop advertising
+     */
     public void stopAdvertising() {
         bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
+        onAdvertisingStopped();
     }
 
+    /**
+     * Add a service to the peripheral
+     *
+     * <p>Once a service has been added to the list, the service and its
+     * included characteristics will be provided by the local peripheral.
+     *
+     * <p>If the local peripheral has already exposed services when this function
+     * is called, a service update notification will be sent to all clients.
+     *
+     * A callback on {@link BluetoothPeripheralManagerCallback#onServiceAdded)} will be received when this operation has completed
+     *
+     * @param service the service to add
+     * @return true if the operation was enqueued, false otherwise
+     */
     public boolean add(@NotNull BluetoothGattService service) {
         Objects.requireNonNull(service, SERVICE_IS_NULL);
 
@@ -375,23 +429,41 @@ public class BluetoothPeripheralManager {
         return result;
     }
 
+    /**
+     * Remove a service
+     *
+     * @param service the service to remove
+     * @return true if the service was removed, otherwise false
+     */
     public boolean remove(@NotNull BluetoothGattService service) {
         Objects.requireNonNull(service, SERVICE_IS_NULL);
 
         return bluetoothGattServer.removeService(service);
     }
 
+    /**
+     * Remove all services
+     */
     public void removeAllServices() {
         bluetoothGattServer.clearServices();
     }
 
+    /**
+     * Get a list of the all advertised services of this peripheral
+     *
+     * @return a list of zero or more services
+     */
     @NotNull
     public List<BluetoothGattService> getServices() {
         return bluetoothGattServer.getServices();
     }
 
     /**
-     * Notify all Centrals that a characteristic has changed
+     * Send a notification or indication that a local characteristic has been
+     * updated
+     *
+     * <p>A notification or indication is sent to all remote centrals to signal
+     * that the characteristic has been updated.
      *
      * @param characteristic the characteristic for which to send a notification
      * @return true if the operation was enqueued, otherwise false
@@ -433,6 +505,11 @@ public class BluetoothPeripheralManager {
         return result;
     }
 
+    /**
+     * Cancel a connection to a Central
+     *
+     * @param central the Central
+     */
     public void cancelConnection(@NotNull Central central) {
         Objects.requireNonNull(central, CENTRAL_IS_NULL);
         cancelConnection(bluetoothAdapter.getRemoteDevice(central.getAddress()));
@@ -449,6 +526,11 @@ public class BluetoothPeripheralManager {
         return bluetoothManager.getConnectedDevices(BluetoothGattServer.GATT);
     }
 
+    /**
+     * Get the set of connected Centrals
+     *
+     * @return a set with zero or more connected Centrals
+     */
     public @NotNull Set<Central> getConnectedCentrals() {
         Set<Central> centrals = new HashSet<>(connectedCentrals.values());
         return Collections.unmodifiableSet(centrals);
@@ -465,8 +547,7 @@ public class BluetoothPeripheralManager {
 
     /**
      * Execute the next command in the subscribe queue.
-     * A queue is used because the calls have to be executed sequentially.
-     * If the read or write fails, the next command in the queue is executed.
+     * A queue is used because some calls have to be executed sequentially.
      */
     private void nextCommand() {
         synchronized (this) {
@@ -505,6 +586,46 @@ public class BluetoothPeripheralManager {
         Objects.requireNonNull(device, DEVICE_IS_NULL);
 
         connectedCentrals.remove(device.getAddress());
+    }
+
+    private final BroadcastReceiver adapterStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (action == null) return;
+
+            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+
+                handleAdapterState(state);
+            }
+        }
+    };
+
+    private void handleAdapterState(int state) {
+        switch (state) {
+            case BluetoothAdapter.STATE_OFF:
+                Timber.d("bluetooth turned off");
+                cancelAllConnectionsWhenBluetoothOff();
+                break;
+            case BluetoothAdapter.STATE_TURNING_OFF:
+                Timber.d("bluetooth turning off");
+                break;
+            case BluetoothAdapter.STATE_ON:
+                Timber.d("bluetooth turned on");
+                break;
+            case BluetoothAdapter.STATE_TURNING_ON:
+                Timber.d("bluetooth turning on");
+                break;
+        }
+    }
+
+    private void cancelAllConnectionsWhenBluetoothOff() {
+        Set<Central> centrals = getConnectedCentrals();
+        for (Central central : centrals) {
+            bluetoothGattServerCallback.onConnectionStateChange(bluetoothAdapter.getRemoteDevice(central.getAddress()), 0, BluetoothProfile.STATE_DISCONNECTED);
+        }
+        onAdvertisingStopped();
     }
 
     private @NotNull byte[] copyOf(@NotNull byte[] source, int offset, int maxSize) {

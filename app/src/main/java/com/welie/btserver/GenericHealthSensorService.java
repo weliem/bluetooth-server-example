@@ -100,7 +100,7 @@ class GenericHealthSensorService extends BaseService {
 
     private void stopNotifying() {
         handler.removeCallbacks(notifyRunnable);
-        observationCharacteristic.getDescriptor(BluetoothPeripheralManager.CCC_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+        observationCharacteristic.getDescriptor(CCC_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
     }
 
     private void sendObservations() {
