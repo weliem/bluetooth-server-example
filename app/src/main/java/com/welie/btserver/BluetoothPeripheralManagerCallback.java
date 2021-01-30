@@ -104,6 +104,15 @@ public abstract class BluetoothPeripheralManagerCallback {
     }
 
     /**
+     * A notification has been sent to a central
+     *
+     * @param central the central
+     * @param characteristic the characteristic for which the notifcation was sent
+     */
+    void onNotificationSent(@NotNull Central central, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
+    }
+
+    /**
      * A remote central has connected
      *
      * @param central the central

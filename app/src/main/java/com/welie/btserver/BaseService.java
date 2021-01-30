@@ -87,6 +87,10 @@ class BaseService implements Service {
     }
 
     @Override
+    public void onNotificationSent(@NotNull Central central, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
+    }
+
+    @Override
     public void onCentralConnected(@NotNull Central central) {
 
     }

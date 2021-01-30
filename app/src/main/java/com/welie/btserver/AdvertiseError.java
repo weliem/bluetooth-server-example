@@ -40,6 +40,7 @@ public enum AdvertiseError {
     UNKNOWN_ERROR(-1);
 
     final int value;
+
     AdvertiseError(int value) {
         this.value = value;
     }

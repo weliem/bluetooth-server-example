@@ -66,6 +66,8 @@ public class BluetoothPeripheralManager {
     private @NotNull final HashMap<BluetoothGattCharacteristic, byte[]> writeLongCharacteristicTemporaryBytes = new HashMap<>();
     private @NotNull final HashMap<BluetoothGattDescriptor, byte[]> writeLongDescriptorTemporaryBytes = new HashMap<>();
     private @NotNull final Map<String, Central> connectedCentrals = new ConcurrentHashMap<>();
+    private @Nullable BluetoothGattCharacteristic currentNotifyCharacteristic = null;
+    private @NotNull byte[] currentNotifyValue = new byte[0];
     private volatile boolean commandQueueBusy = false;
 
     private final BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
@@ -297,6 +299,13 @@ public class BluetoothPeripheralManager {
 
         @Override
         public void onNotificationSent(@NotNull BluetoothDevice device, final int status) {
+            final Central central = getCentral(device);
+            final @NotNull BluetoothGattCharacteristic characteristic = Objects.requireNonNull(currentNotifyCharacteristic);
+            final @NotNull byte[] value = Objects.requireNonNull(currentNotifyValue);
+            currentNotifyValue = new byte[0];
+            mainHandler.post(() -> {
+                callback.onNotificationSent(central, value, characteristic, GattStatus.fromValue(status));
+            });
             completedCommand();
         }
 
@@ -493,6 +502,8 @@ public class BluetoothPeripheralManager {
 
         final boolean confirm = supportsIndicate(characteristic);
         boolean result = commandQueue.add(() -> {
+            currentNotifyValue = value;
+            currentNotifyCharacteristic = characteristic;
             characteristic.setValue(value);
             if (!bluetoothGattServer.notifyCharacteristicChanged(bluetoothDevice, characteristic, confirm)) {
                 Timber.e("notifying characteristic changed failed for <%s>", characteristic.getUuid());

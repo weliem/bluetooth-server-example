@@ -24,6 +24,8 @@ interface Service {
 
     void onNotifyingDisabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic);
 
+    void onNotificationSent(@NotNull Central central, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status);
+
     void onCentralConnected(@NotNull Central central);
 
     void onCentralDisconnected(@NotNull Central central);

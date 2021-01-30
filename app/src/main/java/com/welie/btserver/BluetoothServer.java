@@ -93,6 +93,14 @@ class BluetoothServer {
         }
 
         @Override
+        void onNotificationSent(@NotNull Central central, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
+            Service serviceImplementation = serviceImplementations.get(characteristic.getService());
+            if (serviceImplementation != null) {
+                serviceImplementation.onNotificationSent(central, value, characteristic, status);
+            }
+        }
+
+        @Override
         public void onCentralConnected(@NotNull Central central) {
             for (Service serviceImplementation : serviceImplementations.values()) {
                 serviceImplementation.onCentralConnected(central);
