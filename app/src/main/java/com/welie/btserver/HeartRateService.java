@@ -57,6 +57,7 @@ class HeartRateService extends BaseService {
 
     private void notifyHeartRate() {
         currentHR += (int) ((Math.random() * 10) - 5);
+        if (currentHR > 120) currentHR = 100;
         final byte[] value = new byte[]{0x00, (byte) currentHR};
         notifyCharacteristicChanged(value, measurement);
         handler.postDelayed(notifyRunnable, 1000);
