@@ -168,11 +168,9 @@ class BluetoothServer {
         DeviceInformationService dis = new DeviceInformationService(peripheralManager);
         CurrentTimeService cts = new CurrentTimeService(peripheralManager);
         HeartRateService hrs = new HeartRateService(peripheralManager);
-        GenericHealthSensorService ghs = new GenericHealthSensorService(peripheralManager);
         serviceImplementations.put(dis.getService(), dis);
         serviceImplementations.put(cts.getService(), cts);
         serviceImplementations.put(hrs.getService(), hrs);
-        serviceImplementations.put(ghs.getService(), ghs);
 
         setupServices();
         startAdvertising(hrs.getService().getUuid());

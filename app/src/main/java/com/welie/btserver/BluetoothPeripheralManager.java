@@ -468,21 +468,23 @@ public class BluetoothPeripheralManager {
      * @param characteristic the characteristic for which to send a notification
      * @return true if the operation was enqueued, otherwise false
      */
-    public boolean notifyCharacteristicChanged(@NotNull final BluetoothGattCharacteristic characteristic) {
+    public boolean notifyCharacteristicChanged(@NotNull final byte[] value, @NotNull final BluetoothGattCharacteristic characteristic) {
+        Objects.requireNonNull(value, CHARACTERISTIC_VALUE_IS_NULL);
         Objects.requireNonNull(characteristic, CHARACTERISTIC_IS_NULL);
 
         if (doesNotSupportNotifying(characteristic)) return false;
 
         boolean result = true;
         for (BluetoothDevice device : getConnectedDevices()) {
-            if (!notifyCharacteristicChanged(device, characteristic)) {
+            if (!notifyCharacteristicChanged(copyOf(value), device, characteristic)) {
                 result = false;
             }
         }
         return result;
     }
 
-    private boolean notifyCharacteristicChanged(@NotNull final BluetoothDevice bluetoothDevice, @NotNull final BluetoothGattCharacteristic characteristic) {
+    private boolean notifyCharacteristicChanged(@NotNull final byte[] value, @NotNull final BluetoothDevice bluetoothDevice, @NotNull final BluetoothGattCharacteristic characteristic) {
+        Objects.requireNonNull(value, CHARACTERISTIC_VALUE_IS_NULL);
         Objects.requireNonNull(bluetoothDevice, DEVICE_IS_NULL);
         Objects.requireNonNull(characteristic, CHARACTERISTIC_IS_NULL);
         Objects.requireNonNull(characteristic.getValue(), CHARACTERISTIC_VALUE_IS_NULL);
@@ -491,6 +493,7 @@ public class BluetoothPeripheralManager {
 
         final boolean confirm = supportsIndicate(characteristic);
         boolean result = commandQueue.add(() -> {
+            characteristic.setValue(value);
             if (!bluetoothGattServer.notifyCharacteristicChanged(bluetoothDevice, characteristic, confirm)) {
                 Timber.e("notifying characteristic changed failed for <%s>", characteristic.getUuid());
                 completedCommand();
@@ -636,6 +639,17 @@ public class BluetoothPeripheralManager {
             return result;
         }
         return Arrays.copyOf(source, source.length);
+    }
+
+    /**
+     * Make a safe copy of a nullable byte array
+     *
+     * @param source byte array to copy
+     * @return non-null copy of the source byte array or an empty array if source was null
+     */
+    @NotNull
+    byte[] copyOf(@Nullable byte[] source) {
+        return (source == null) ? new byte[0] : Arrays.copyOf(source, source.length);
     }
 
     /**

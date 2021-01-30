@@ -13,13 +13,16 @@ import java.util.UUID;
 
 import timber.log.Timber;
 
+import static android.bluetooth.BluetoothGattCharacteristic.*;
+import static android.bluetooth.BluetoothGattCharacteristic.PERMISSION_READ;
+
 class CurrentTimeService extends BaseService {
 
     private static final UUID CTS_SERVICE_UUID = UUID.fromString("00001805-0000-1000-8000-00805f9b34fb");
     private static final UUID CURRENT_TIME_CHARACTERISTIC_UUID = UUID.fromString("00002A2B-0000-1000-8000-00805f9b34fb");
 
     private @NotNull final BluetoothGattService service = new BluetoothGattService(CTS_SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
-    private @NotNull final BluetoothGattCharacteristic currentTime = new BluetoothGattCharacteristic(CURRENT_TIME_CHARACTERISTIC_UUID, BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_INDICATE, BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE);
+    private @NotNull final BluetoothGattCharacteristic currentTime = new BluetoothGattCharacteristic(CURRENT_TIME_CHARACTERISTIC_UUID, PROPERTY_READ | PROPERTY_INDICATE, PERMISSION_READ);
     private @NotNull final Handler handler = new Handler(Looper.getMainLooper());
     private @NotNull final Runnable notifyRunnable = this::notifyCurrentTime;
 
@@ -27,35 +30,49 @@ class CurrentTimeService extends BaseService {
         super(peripheralManager);
         service.addCharacteristic(currentTime);
         currentTime.addDescriptor(getCccDescriptor());
-        setCurrentTime();
+        currentTime.setValue(getCurrentTime());
     }
 
     @Override
-    public GattStatus onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
-        Timber.i("onCharacteristicWrite <%s>", BluetoothBytesParser.bytes2String(value));
-        return super.onCharacteristicWrite(central, characteristic, value);
+    public void onCentralDisconnected(@NotNull Central central) {
+        if (noCentralsConnected()) {
+            stopNotifying();
+        }
+    }
+
+    @Override
+    public void onCharacteristicRead(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+        currentTime.setValue(getCurrentTime());
     }
 
     @Override
     public void onNotifyingEnabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
-        notifyCurrentTime();
+        if (characteristic.getUuid().equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
+            notifyCurrentTime();
+        }
     }
 
     @Override
     public void onNotifyingDisabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
-        handler.removeCallbacks(notifyRunnable);
+        if (characteristic.getUuid().equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
+            stopNotifying();
+        }
     }
 
     private void notifyCurrentTime() {
-        setCurrentTime();
-        peripheralManager.notifyCharacteristicChanged(currentTime);
+        notifyCharacteristicChanged(getCurrentTime() ,currentTime);
         handler.postDelayed(notifyRunnable, 1000);
     }
 
-    private void setCurrentTime() {
+    private void stopNotifying() {
+        handler.removeCallbacks(notifyRunnable);
+    }
+
+    @NotNull
+    private byte[] getCurrentTime() {
         BluetoothBytesParser parser = new BluetoothBytesParser(ByteOrder.LITTLE_ENDIAN);
         parser.setCurrentTime(Calendar.getInstance());
-        currentTime.setValue(parser.getValue());
+        return parser.getValue();
     }
 
     @Override

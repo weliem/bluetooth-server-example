@@ -38,8 +38,8 @@ class BaseService implements Service {
         return cudDescriptor;
     }
 
-    protected void notifyCharacteristicChanged(@NotNull final BluetoothGattCharacteristic characteristic) {
-        peripheralManager.notifyCharacteristicChanged(characteristic);
+    protected void notifyCharacteristicChanged(@NotNull final byte[] value, @NotNull final BluetoothGattCharacteristic characteristic) {
+        peripheralManager.notifyCharacteristicChanged(value, characteristic);
     }
 
     boolean noCentralsConnected() {
