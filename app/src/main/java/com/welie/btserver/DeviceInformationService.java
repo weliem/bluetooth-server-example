@@ -3,6 +3,9 @@ package com.welie.btserver;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.os.Build;
+
+import com.welie.blessed.BluetoothPeripheralManager;
+
 import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 

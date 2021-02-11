@@ -4,6 +4,10 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 
+import com.welie.blessed.BluetoothCentral;
+import com.welie.blessed.BluetoothPeripheralManager;
+import com.welie.blessed.GattStatus;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
@@ -57,46 +61,46 @@ class BaseService implements Service {
     }
 
     @Override
-    public void onCharacteristicRead(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+    public void onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
 
     }
 
     @Override
-    public GattStatus onCharacteristicWrite(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
+    public GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
         return GattStatus.SUCCESS;
     }
 
     @Override
-    public void onDescriptorRead(@NotNull Central central, @NotNull BluetoothGattDescriptor descriptor) {
+    public void onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor) {
 
     }
 
     @Override
-    public GattStatus onDescriptorWrite(@NotNull Central central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value) {
+    public GattStatus onDescriptorWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value) {
         return GattStatus.SUCCESS;
     }
 
     @Override
-    public void onNotifyingEnabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+    public void onNotifyingEnabled(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
 
     }
 
     @Override
-    public void onNotifyingDisabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+    public void onNotifyingDisabled(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
 
     }
 
     @Override
-    public void onNotificationSent(@NotNull Central central, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
+    public void onNotificationSent(@NotNull BluetoothCentral central, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
     }
 
     @Override
-    public void onCentralConnected(@NotNull Central central) {
+    public void onCentralConnected(@NotNull BluetoothCentral central) {
 
     }
 
     @Override
-    public void onCentralDisconnected(@NotNull Central central) {
+    public void onCentralDisconnected(@NotNull BluetoothCentral central) {
 
     }
 }

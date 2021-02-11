@@ -5,6 +5,9 @@ import android.bluetooth.BluetoothGattService;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.welie.blessed.BluetoothCentral;
+import com.welie.blessed.BluetoothPeripheralManager;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -35,21 +38,21 @@ class HeartRateService extends BaseService {
     }
 
     @Override
-    public void onCentralDisconnected(@NotNull Central central) {
+    public void onCentralDisconnected(@NotNull BluetoothCentral central) {
         if (noCentralsConnected()) {
             stopNotifying();
         }
     }
 
     @Override
-    public void onNotifyingEnabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+    public void onNotifyingEnabled(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
         if (characteristic.getUuid().equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
             notifyHeartRate();
         }
     }
 
     @Override
-    public void onNotifyingDisabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+    public void onNotifyingDisabled(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
         if (characteristic.getUuid().equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
             stopNotifying();
         }

@@ -5,6 +5,10 @@ import android.bluetooth.BluetoothGattService;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.welie.blessed.BluetoothBytesParser;
+import com.welie.blessed.BluetoothCentral;
+import com.welie.blessed.BluetoothPeripheralManager;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteOrder;
@@ -34,26 +38,26 @@ class CurrentTimeService extends BaseService {
     }
 
     @Override
-    public void onCentralDisconnected(@NotNull Central central) {
+    public void onCentralDisconnected(@NotNull BluetoothCentral central) {
         if (noCentralsConnected()) {
             stopNotifying();
         }
     }
 
     @Override
-    public void onCharacteristicRead(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+    public void onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
         currentTime.setValue(getCurrentTime());
     }
 
     @Override
-    public void onNotifyingEnabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+    public void onNotifyingEnabled(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
         if (characteristic.getUuid().equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
             notifyCurrentTime();
         }
     }
 
     @Override
-    public void onNotifyingDisabled(@NotNull Central central, @NotNull BluetoothGattCharacteristic characteristic) {
+    public void onNotifyingDisabled(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
         if (characteristic.getUuid().equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
             stopNotifying();
         }
