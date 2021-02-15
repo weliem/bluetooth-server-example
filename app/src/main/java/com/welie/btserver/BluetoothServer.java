@@ -26,10 +26,10 @@ import java.util.UUID;
 import timber.log.Timber;
 
 class BluetoothServer {
-    private static BluetoothServer instance = null;
 
-    @NotNull
-    private final BluetoothPeripheralManager peripheralManager;
+    private static BluetoothServer instance = null;
+    private BluetoothPeripheralManager peripheralManager;
+    private final HashMap<BluetoothGattService, Service> serviceImplementations = new HashMap<>();
 
     public static synchronized BluetoothServer getInstance(Context context) {
         if (instance == null) {
@@ -40,7 +40,7 @@ class BluetoothServer {
 
     private final BluetoothPeripheralManagerCallback peripheralManagerCallback = new BluetoothPeripheralManagerCallback() {
         @Override
-        public void onServiceAdded(GattStatus status, @NotNull BluetoothGattService service) {
+        public void onServiceAdded(@NotNull GattStatus status, @NotNull BluetoothGattService service) {
 
         }
 
@@ -162,20 +162,25 @@ class BluetoothServer {
         }
     }
 
-    private final HashMap<BluetoothGattService, Service> serviceImplementations = new HashMap<>();
-
     BluetoothServer(Context context) {
-        // Plant a tree
         Timber.plant(new Timber.DebugTree());
 
-        BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if (bluetoothAdapter == null || bluetoothManager == null) {
+            Timber.e("bluetooth not supported");
+            return;
+        }
 
         if (!bluetoothAdapter.isMultipleAdvertisementSupported()) {
             Timber.e("not supporting advertising");
+            return;
         }
 
+        // Set the adapter name as this is used when advertising
         bluetoothAdapter.setName(Build.MODEL);
+
         this.peripheralManager = new BluetoothPeripheralManager(context, bluetoothManager, peripheralManagerCallback);
         this.peripheralManager.removeAllServices();
 

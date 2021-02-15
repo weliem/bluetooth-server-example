@@ -26,10 +26,10 @@ class DeviceInformationService extends BaseService {
     public DeviceInformationService(@NotNull BluetoothPeripheralManager peripheralManager) {
         super(peripheralManager);
 
-        BluetoothGattCharacteristic manufacturer = new BluetoothGattCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC_UUID, PROPERTY_READ | PROPERTY_WRITE, PERMISSION_READ | PERMISSION_WRITE);
+        final BluetoothGattCharacteristic manufacturer = new BluetoothGattCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
         service.addCharacteristic(manufacturer);
 
-        BluetoothGattCharacteristic modelNumber = new BluetoothGattCharacteristic(MODEL_NUMBER_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
+        final BluetoothGattCharacteristic modelNumber = new BluetoothGattCharacteristic(MODEL_NUMBER_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
         service.addCharacteristic(modelNumber);
 
         manufacturer.setValue(Build.MANUFACTURER);
