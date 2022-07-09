@@ -74,9 +74,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String[] getRequiredPermissions() {
         int targetSdkVersion = getApplicationInfo().targetSdkVersion;
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && targetSdkVersion >= Build.VERSION_CODES.Q)
-            return new String[] {Manifest.permission.ACCESS_FINE_LOCATION};
-        else return new String[] {Manifest.permission.ACCESS_COARSE_LOCATION};
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && targetSdkVersion >= Build.VERSION_CODES.S) {
+            return new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_ADVERTISE};
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && targetSdkVersion >= Build.VERSION_CODES.Q) {
+            return new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
+        } else return new String[]{Manifest.permission.ACCESS_COARSE_LOCATION};
     }
 
     private void permissionsGranted() {
@@ -93,10 +95,14 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
 
-        boolean isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        boolean isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            return locationManager.isLocationEnabled();
+        } else {
+            boolean isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            boolean isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 
-        return isGpsEnabled || isNetworkEnabled;
+            return isGpsEnabled || isNetworkEnabled;
+        }
     }
 
     private boolean checkLocationServices() {
