@@ -153,7 +153,7 @@ class BluetoothServer {
                 .setIncludeDeviceName(true)
                 .build();
 
-        peripheralManager.startAdvertising(advertiseSettings, scanResponse, advertiseData);
+        peripheralManager.startAdvertising(advertiseSettings, advertiseData, scanResponse);
     }
 
     private void setupServices() {
