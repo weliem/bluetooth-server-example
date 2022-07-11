@@ -1,5 +1,6 @@
 package com.welie.btserver;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
@@ -25,6 +26,7 @@ import java.util.UUID;
 
 import timber.log.Timber;
 
+@SuppressLint("MissingPermission")
 class BluetoothServer {
 
     private static BluetoothServer instance = null;
@@ -99,7 +101,7 @@ class BluetoothServer {
         }
 
         @Override
-        public void onNotificationSent(@NotNull BluetoothCentral central, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
+        public void onNotificationSent(@NotNull BluetoothCentral central, byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
             Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
                 serviceImplementation.onNotificationSent(central, value, characteristic, status);
@@ -161,6 +163,7 @@ class BluetoothServer {
             peripheralManager.add(service);
         }
     }
+
 
     BluetoothServer(Context context) {
         Timber.plant(new Timber.DebugTree());

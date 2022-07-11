@@ -4,15 +4,10 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.os.Handler;
 import android.os.Looper;
-
 import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.BluetoothPeripheralManager;
-import com.welie.blessed.GattStatus;
-
 import org.jetbrains.annotations.NotNull;
-
 import java.util.UUID;
-
 import timber.log.Timber;
 
 import static android.bluetooth.BluetoothGattCharacteristic.PERMISSION_READ;

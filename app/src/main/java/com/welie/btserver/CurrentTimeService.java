@@ -4,18 +4,13 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.os.Handler;
 import android.os.Looper;
-
 import com.welie.blessed.BluetoothBytesParser;
 import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.BluetoothPeripheralManager;
-
 import org.jetbrains.annotations.NotNull;
-
 import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.UUID;
-
-import timber.log.Timber;
 
 import static android.bluetooth.BluetoothGattCharacteristic.*;
 import static android.bluetooth.BluetoothGattCharacteristic.PERMISSION_READ;
@@ -34,6 +29,7 @@ class CurrentTimeService extends BaseService {
         super(peripheralManager);
         service.addCharacteristic(currentTime);
         currentTime.addDescriptor(getCccDescriptor());
+        currentTime.addDescriptor(getCudDescriptor("retrieve current time"));
         currentTime.setValue(getCurrentTime());
     }
 
@@ -72,7 +68,6 @@ class CurrentTimeService extends BaseService {
         handler.removeCallbacks(notifyRunnable);
     }
 
-    @NotNull
     private byte[] getCurrentTime() {
         BluetoothBytesParser parser = new BluetoothBytesParser(ByteOrder.LITTLE_ENDIAN);
         parser.setCurrentTime(Calendar.getInstance());

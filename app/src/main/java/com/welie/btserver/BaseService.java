@@ -42,7 +42,7 @@ class BaseService implements Service {
         return cudDescriptor;
     }
 
-    protected void notifyCharacteristicChanged(@NotNull final byte[] value, @NotNull final BluetoothGattCharacteristic characteristic) {
+    protected void notifyCharacteristicChanged(final byte[] value, @NotNull final BluetoothGattCharacteristic characteristic) {
         peripheralManager.notifyCharacteristicChanged(value, characteristic);
     }
 
@@ -66,7 +66,7 @@ class BaseService implements Service {
     }
 
     @Override
-    public GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
+    public GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, byte[] value) {
         return GattStatus.SUCCESS;
     }
 
@@ -76,7 +76,7 @@ class BaseService implements Service {
     }
 
     @Override
-    public GattStatus onDescriptorWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value) {
+    public GattStatus onDescriptorWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor, byte[] value) {
         return GattStatus.SUCCESS;
     }
 
@@ -91,7 +91,7 @@ class BaseService implements Service {
     }
 
     @Override
-    public void onNotificationSent(@NotNull BluetoothCentral central, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
+    public void onNotificationSent(@NotNull BluetoothCentral central, byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull GattStatus status) {
     }
 
     @Override

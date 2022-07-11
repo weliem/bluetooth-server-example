@@ -3,16 +3,12 @@ package com.welie.btserver;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.os.Build;
-
 import com.welie.blessed.BluetoothPeripheralManager;
-
 import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 import static android.bluetooth.BluetoothGattCharacteristic.PERMISSION_READ;
-import static android.bluetooth.BluetoothGattCharacteristic.PERMISSION_WRITE;
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ;
-import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE;
 
 
 class DeviceInformationService extends BaseService {
