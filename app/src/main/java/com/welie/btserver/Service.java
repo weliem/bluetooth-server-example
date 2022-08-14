@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattService;
 
 import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.GattStatus;
+import com.welie.blessed.ReadResponse;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -15,11 +16,11 @@ interface Service {
 
     String getServiceName();
 
-    void onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic);
+    ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic);
 
     GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value);
 
-    void onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor);
+    ReadResponse onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor);
 
     GattStatus onDescriptorWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value);
 
