@@ -50,7 +50,7 @@ class BluetoothServer {
         }
 
         @Override
-        public ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
+        public @NotNull ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
             Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
                 return serviceImplementation.onCharacteristicRead(central, characteristic);
@@ -58,8 +58,9 @@ class BluetoothServer {
             return super.onCharacteristicRead(central, characteristic);
         }
 
+
         @Override
-        public GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
+        public @NotNull GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
             Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
                 return serviceImplementation.onCharacteristicWrite(central, characteristic, value);
@@ -68,7 +69,15 @@ class BluetoothServer {
         }
 
         @Override
-        public ReadResponse onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor) {
+        public void onCharacteristicWriteCompleted(@NonNull BluetoothCentral central, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
+            Service serviceImplementation = serviceImplementations.get(characteristic.getService());
+            if (serviceImplementation != null) {
+                serviceImplementation.onCharacteristicWriteCompleted(central, characteristic, value);
+            }
+        }
+
+        @Override
+        public @NotNull ReadResponse onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor) {
             BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor has no Characteristic");
             BluetoothGattService service = Objects.requireNonNull(characteristic.getService(), "Characteristic has no Service");
 
