@@ -7,6 +7,9 @@ import android.os.Looper;
 import com.welie.blessed.BluetoothBytesParser;
 import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.BluetoothPeripheralManager;
+import com.welie.blessed.GattStatus;
+import com.welie.blessed.ReadResponse;
+
 import org.jetbrains.annotations.NotNull;
 import java.nio.ByteOrder;
 import java.util.Calendar;
@@ -29,8 +32,7 @@ class CurrentTimeService extends BaseService {
         super(peripheralManager);
         service.addCharacteristic(currentTime);
         currentTime.addDescriptor(getCccDescriptor());
-        currentTime.addDescriptor(getCudDescriptor("retrieve current time"));
-        currentTime.setValue(getCurrentTime());
+        currentTime.addDescriptor(getCudDescriptor());
     }
 
     @Override
@@ -41,8 +43,8 @@ class CurrentTimeService extends BaseService {
     }
 
     @Override
-    public void onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
-        currentTime.setValue(getCurrentTime());
+    public ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
+        return new ReadResponse(GattStatus.SUCCESS, getCurrentTime());
     }
 
     @Override

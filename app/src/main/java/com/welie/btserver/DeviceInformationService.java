@@ -3,7 +3,12 @@ package com.welie.btserver;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.os.Build;
+
+import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.BluetoothPeripheralManager;
+import com.welie.blessed.GattStatus;
+import com.welie.blessed.ReadResponse;
+
 import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
@@ -22,14 +27,21 @@ class DeviceInformationService extends BaseService {
     public DeviceInformationService(@NotNull BluetoothPeripheralManager peripheralManager) {
         super(peripheralManager);
 
-        final BluetoothGattCharacteristic manufacturer = new BluetoothGattCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
+        BluetoothGattCharacteristic manufacturer = new BluetoothGattCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
         service.addCharacteristic(manufacturer);
 
-        final BluetoothGattCharacteristic modelNumber = new BluetoothGattCharacteristic(MODEL_NUMBER_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
+        BluetoothGattCharacteristic modelNumber = new BluetoothGattCharacteristic(MODEL_NUMBER_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
         service.addCharacteristic(modelNumber);
+    }
 
-        manufacturer.setValue(Build.MANUFACTURER);
-        modelNumber.setValue(Build.MODEL);
+    @Override
+    public ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
+        if (characteristic.getUuid().equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
+            return new ReadResponse(GattStatus.SUCCESS, Build.MANUFACTURER.getBytes());
+        } else if (characteristic.getUuid().equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
+            return new ReadResponse(GattStatus.SUCCESS, Build.MODEL.getBytes());
+        }
+        return super.onCharacteristicRead(central, characteristic);
     }
 
     @Override
