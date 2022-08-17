@@ -7,15 +7,17 @@ import android.bluetooth.BluetoothGattService;
 import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.BluetoothPeripheralManager;
 import com.welie.blessed.GattStatus;
+import com.welie.blessed.ReadResponse;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 
 import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_READ;
 import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_WRITE;
+
+import androidx.annotation.NonNull;
 
 class BaseService implements Service {
 
@@ -30,16 +32,11 @@ class BaseService implements Service {
     }
 
     BluetoothGattDescriptor getCccDescriptor() {
-        BluetoothGattDescriptor cccDescriptor = new BluetoothGattDescriptor(CCC_DESCRIPTOR_UUID, PERMISSION_READ | PERMISSION_WRITE);
-        cccDescriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
-        return cccDescriptor;
+        return new BluetoothGattDescriptor(CCC_DESCRIPTOR_UUID, PERMISSION_READ | PERMISSION_WRITE);
     }
 
-    BluetoothGattDescriptor getCudDescriptor(@NotNull String defaultValue) {
-        Objects.requireNonNull(defaultValue, "CUD value is null");
-        BluetoothGattDescriptor cudDescriptor = new BluetoothGattDescriptor(CUD_DESCRIPTOR_UUID, PERMISSION_READ | PERMISSION_WRITE);
-        cudDescriptor.setValue(defaultValue.getBytes(StandardCharsets.UTF_8));
-        return cudDescriptor;
+    BluetoothGattDescriptor getCudDescriptor() {
+        return new BluetoothGattDescriptor(CUD_DESCRIPTOR_UUID, PERMISSION_READ | PERMISSION_WRITE);
     }
 
     protected void notifyCharacteristicChanged(final byte[] value, @NotNull final BluetoothGattCharacteristic characteristic) {
@@ -61,8 +58,8 @@ class BaseService implements Service {
     }
 
     @Override
-    public void onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
-
+    public ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
+        return new ReadResponse(GattStatus.REQUEST_NOT_SUPPORTED, null);
     }
 
     @Override
@@ -71,8 +68,11 @@ class BaseService implements Service {
     }
 
     @Override
-    public void onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor) {
+    public void onCharacteristicWriteCompleted(@NonNull BluetoothCentral central, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {}
 
+    @Override
+    public ReadResponse onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor) {
+        return new ReadResponse(GattStatus.REQUEST_NOT_SUPPORTED, null);
     }
 
     @Override

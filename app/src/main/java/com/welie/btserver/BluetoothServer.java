@@ -12,11 +12,14 @@ import android.content.Context;
 import android.os.Build;
 import android.os.ParcelUuid;
 
+import androidx.annotation.NonNull;
+
 import com.welie.blessed.AdvertiseError;
 import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.BluetoothPeripheralManager;
 import com.welie.blessed.BluetoothPeripheralManagerCallback;
 import com.welie.blessed.GattStatus;
+import com.welie.blessed.ReadResponse;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -47,15 +50,17 @@ class BluetoothServer {
         }
 
         @Override
-        public void onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
+        public @NotNull ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
             Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
-                serviceImplementation.onCharacteristicRead(central, characteristic);
+                return serviceImplementation.onCharacteristicRead(central, characteristic);
             }
+            return super.onCharacteristicRead(central, characteristic);
         }
 
+
         @Override
-        public GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
+        public @NotNull GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value) {
             Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
                 return serviceImplementation.onCharacteristicWrite(central, characteristic, value);
@@ -64,15 +69,26 @@ class BluetoothServer {
         }
 
         @Override
-        public void onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor) {
-            BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor has no Characteristic");
-            BluetoothGattService service = Objects.requireNonNull(characteristic.getService(), "Characteristic has no Service");
-            Service serviceImplementation = serviceImplementations.get(service);
+        public void onCharacteristicWriteCompleted(@NonNull BluetoothCentral central, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
+            Service serviceImplementation = serviceImplementations.get(characteristic.getService());
             if (serviceImplementation != null) {
-                serviceImplementation.onDescriptorRead(central, descriptor);
+                serviceImplementation.onCharacteristicWriteCompleted(central, characteristic, value);
             }
         }
 
+        @Override
+        public @NotNull ReadResponse onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor) {
+            BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor has no Characteristic");
+            BluetoothGattService service = Objects.requireNonNull(characteristic.getService(), "Characteristic has no Service");
+
+            Service serviceImplementation = serviceImplementations.get(service);
+            if (serviceImplementation != null) {
+                return serviceImplementation.onDescriptorRead(central, descriptor);
+            }
+            return super.onDescriptorRead(central, descriptor);
+        }
+
+        @NonNull
         @Override
         public GattStatus onDescriptorWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value) {
             BluetoothGattCharacteristic characteristic = Objects.requireNonNull(descriptor.getCharacteristic(), "Descriptor has no Characteristic");
@@ -169,13 +185,12 @@ class BluetoothServer {
         Timber.plant(new Timber.DebugTree());
 
         final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        if (bluetoothAdapter == null || bluetoothManager == null) {
+        if (bluetoothManager == null) {
             Timber.e("bluetooth not supported");
             return;
         }
 
+        final BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
         if (!bluetoothAdapter.isMultipleAdvertisementSupported()) {
             Timber.e("not supporting advertising");
             return;

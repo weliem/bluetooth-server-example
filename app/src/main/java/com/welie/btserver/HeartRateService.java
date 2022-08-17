@@ -6,6 +6,9 @@ import android.os.Handler;
 import android.os.Looper;
 import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.BluetoothPeripheralManager;
+import com.welie.blessed.GattStatus;
+import com.welie.blessed.ReadResponse;
+
 import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 import timber.log.Timber;
@@ -29,7 +32,6 @@ class HeartRateService extends BaseService {
     public HeartRateService(@NotNull BluetoothPeripheralManager peripheralManager) {
         super(peripheralManager);
         service.addCharacteristic(measurement);
-        measurement.setValue(new byte[]{0x00, 0x40});
         measurement.addDescriptor(getCccDescriptor());
     }
 
@@ -38,6 +40,14 @@ class HeartRateService extends BaseService {
         if (noCentralsConnected()) {
             stopNotifying();
         }
+    }
+
+    @Override
+    public ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
+        if (characteristic.getUuid().equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
+            return new ReadResponse(GattStatus.SUCCESS, new byte[]{0x00, 0x40});
+        }
+        return super.onCharacteristicRead(central, characteristic);
     }
 
     @Override
