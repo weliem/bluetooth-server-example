@@ -27,10 +27,10 @@ class DeviceInformationService extends BaseService {
     public DeviceInformationService(@NotNull BluetoothPeripheralManager peripheralManager) {
         super(peripheralManager);
 
-        final BluetoothGattCharacteristic manufacturer = new BluetoothGattCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
+        BluetoothGattCharacteristic manufacturer = new BluetoothGattCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
         service.addCharacteristic(manufacturer);
 
-        final BluetoothGattCharacteristic modelNumber = new BluetoothGattCharacteristic(MODEL_NUMBER_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
+        BluetoothGattCharacteristic modelNumber = new BluetoothGattCharacteristic(MODEL_NUMBER_CHARACTERISTIC_UUID, PROPERTY_READ, PERMISSION_READ);
         service.addCharacteristic(modelNumber);
     }
 
@@ -38,7 +38,7 @@ class DeviceInformationService extends BaseService {
     public ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
         if (characteristic.getUuid().equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
             return new ReadResponse(GattStatus.SUCCESS, Build.MANUFACTURER.getBytes());
-        } else if(characteristic.getUuid().equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
+        } else if (characteristic.getUuid().equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
             return new ReadResponse(GattStatus.SUCCESS, Build.MODEL.getBytes());
         }
         return super.onCharacteristicRead(central, characteristic);
