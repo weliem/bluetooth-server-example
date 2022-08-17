@@ -17,6 +17,8 @@ import java.util.UUID;
 import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_READ;
 import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_WRITE;
 
+import androidx.annotation.NonNull;
+
 class BaseService implements Service {
 
     public static final UUID CUD_DESCRIPTOR_UUID = UUID.fromString("00002901-0000-1000-8000-00805f9b34fb");
@@ -64,6 +66,9 @@ class BaseService implements Service {
     public GattStatus onCharacteristicWrite(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic, byte[] value) {
         return GattStatus.SUCCESS;
     }
+
+    @Override
+    public void onCharacteristicWriteCompleted(@NonNull BluetoothCentral central, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {}
 
     @Override
     public ReadResponse onDescriptorRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattDescriptor descriptor) {
