@@ -98,7 +98,7 @@ class CurrentTimeService extends BaseService {
         date.setTime(date.getTime() - offset);
         cal.setTime(date);
         parser.setCurrentTime(cal);
-        Timber.i("current time bytes %s", BluetoothBytesParser.bytes2String(parser.getValue()));
+        Timber.i("current time bytes %s", BluetoothBytesParser.asHexString(parser.getValue()));
         return parser.getValue();
     }
 
